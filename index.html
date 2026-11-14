@@ -638,7 +638,8 @@
   .verdict .v-row{ margin-bottom: 0.75rem; }
   .verdict .v-label{ font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--text-dim); margin:0 0 0.15rem; }
   .verdict .v-text{ font-family:'Fraunces', serif; font-size:0.96rem; line-height:1.5; color: var(--text); margin:0; }
-  .verdict .v-quote{ margin: 0.9rem 0 0; padding-left: 0.9rem; border-left: 2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem; line-height:1.5; color: var(--text); }
+  .verdict .v-quote-slot .v-label{ margin-top:0.9rem; }
+  .verdict .v-quote{ margin: 0.35rem 0 0; padding-left: 0.9rem; border-left: 2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem; line-height:1.5; color: var(--text); }
   .verdict .v-quote cite{ display:block; margin-top:0.35rem; font-size:0.8rem; color: var(--thread); font-style:normal; }
   .t-entry.with-face{ display:flex; align-items:flex-start; gap:0.85rem; }
   .t-body{ flex:1; min-width:0; }
@@ -8548,32 +8549,81 @@ async function askVerdict(question, turns){
   const prompt = `Here is a roundtable conversation between philosophers on the question: "${question}"\n\n` +
     turns.map(t => `${t.name}${t.to ? ' (to ' + t.to + ')' : ''}: ${t.line}`).join('\n') +
     `\n\nAs a neutral chronicler, sum up where the table landed. Respond ONLY with valid JSON, no code fences:\n` +
-    `{"agreed": "one or two sentences on what most of them converged on (or that they found no common ground)",\n` +
-    ` "split": "one or two sentences naming the sharpest disagreement and who was on each side",\n` +
+    `Keep each answer to ONE plain sentence of at most 30 words.\n` +
+    `{"agreed": "one sentence on what most of them converged on (or that they found no common ground)",\n` +
+    ` "split": "one sentence naming the sharpest disagreement and who was on each side",\n` +
     ` "line": {"name": "speaker", "text": "the single most memorable line, quoted exactly from the conversation"}}`;
   try { return extractJSON(await callModel(prompt, 900), '{', '}'); } catch(e){ console.error(e); return null; }
 }
 
 let lastVerdict = null;   // kept so a shared link can include it
+// keep each verdict row to a glance: if the AI ran long, stop at the first sentence
+function shortVerdict(text){
+  const t = String(text || '').trim();
+  if(t.split(/\s+/).length <= 40) return t;
+  const m = t.match(/^.*?[.!?](\s|$)/);
+  return m ? m[0].trim() : t.split(/\s+/).slice(0, 40).join(' ') + '…';
+}
+// the philosophers' lines currently in the transcript, with how you voted on each
+function transcriptLines(){
+  return Array.from(document.querySelectorAll('#transcript .t-entry'))
+    .filter(e => e.dataset.name && e.dataset.name !== 'You')
+    .map(e => { const l = e.querySelector('.t-line');
+      return { name: e.dataset.name, text: (l && (l.dataset.fullText || l.textContent)) || '', vote: e.dataset.vote || '', at: +(e.dataset.votedAt || 0) }; });
+}
+const normLine = s => String(s || '').toLowerCase().replace(/[“”"'‘’.,;:!?—–-]/g, ' ').replace(/\s+/g, ' ').trim();
+// make sure the AI's "memorable line" was really said: exact match, or the clearly closest real line
+function verifyPick(pick, lines){
+  if(!pick || !pick.text) return null;
+  const p = normLine(pick.text);
+  let hit = lines.find(l => normLine(l.text).includes(p) || (p.length > 20 && p.includes(normLine(l.text))));
+  if(hit) return hit;
+  const words = new Set(p.split(' '));
+  let best = null, bestScore = 0;
+  lines.forEach(l => {
+    const w = new Set(normLine(l.text).split(' ')); let shared = 0; words.forEach(x => { if(w.has(x)) shared++; });
+    const score = shared / Math.max(words.size, w.size);
+    if(score > bestScore){ bestScore = score; best = l; }
+  });
+  return bestScore >= 0.6 ? best : null;   // too different: the AI invented it, so leave it out
+}
+// choose the quote: a line you agreed with wins; otherwise the AI's (verified) pick, unless you rejected it
+function fillVerdictQuote(card){
+  const slot = card.querySelector('.v-quote-slot'); if(!slot) return;
+  slot.innerHTML = '';
+  const lines = transcriptLines();
+  const aiPick = verifyPick(card.__v && card.__v.line, lines);
+  const agreed = lines.filter(l => l.vote === 'agree');
+  let chosen = null, label = '';
+  if(agreed.length){
+    chosen = (aiPick && agreed.find(l => l.text === aiPick.text)) || agreed.slice().sort((a, b) => b.at - a.at)[0];
+    label = 'The line that resonated with you';
+  } else if(aiPick && aiPick.vote !== 'disagree'){
+    chosen = aiPick; label = 'The line that stood out';
+  }
+  if(!chosen) return;
+  const l = document.createElement('p'); l.className = 'v-label'; l.textContent = label;
+  const q = document.createElement('blockquote'); q.className = 'v-quote';
+  q.textContent = '“' + chosen.text + '”';
+  const by = document.createElement('cite'); by.textContent = '— ' + chosen.name;
+  q.appendChild(by); slot.appendChild(l); slot.appendChild(q);
+}
 function renderVerdictInto(card, v){
   card.classList.remove('pending');
   card.innerHTML = '';
+  card.__v = v;
   const add = (cls, label, text) => {
     const row = document.createElement('div'); row.className = 'v-row ' + cls;
     const l = document.createElement('p'); l.className = 'v-label'; l.textContent = label;
-    const t = document.createElement('p'); t.className = 'v-text'; t.textContent = text;
+    const t = document.createElement('p'); t.className = 'v-text'; t.textContent = shortVerdict(text);
     row.appendChild(l); row.appendChild(t); card.appendChild(row);
   };
   const title = document.createElement('p'); title.className = 'v-title'; title.textContent = 'The table’s verdict';
   card.appendChild(title);
   if(v.agreed) add('agreed', 'Where they met', v.agreed);
   if(v.split) add('split', 'Where they split', v.split);
-  if(v.line && v.line.text){
-    const q = document.createElement('blockquote'); q.className = 'v-quote';
-    q.textContent = '“' + v.line.text + '”';
-    const by = document.createElement('cite'); by.textContent = '— ' + (v.line.name || '');
-    q.appendChild(by); card.appendChild(q);
-  }
+  const slot = document.createElement('div'); slot.className = 'v-quote-slot'; card.appendChild(slot);
+  fillVerdictQuote(card);
 }
 
 async function addVerdict(gen){
@@ -8611,7 +8661,8 @@ function castVote(entry, name, kind){
   if(prev){ bumpLean(all, name, prev, -1); bumpLean(sessionLean, name, prev, -1); }
   if(next){ bumpLean(all, name, next, 1);  bumpLean(sessionLean, name, next, 1); }
   saveLean(all);
-  if(next) entry.dataset.vote = next; else delete entry.dataset.vote;
+  if(next){ entry.dataset.vote = next; entry.dataset.votedAt = Date.now(); } else { delete entry.dataset.vote; delete entry.dataset.votedAt; }
+  document.querySelectorAll('#transcript .verdict').forEach(c => { if(c.__v) fillVerdictQuote(c); });
   entry.querySelectorAll('.t-vote').forEach(b => b.classList.toggle('on', b.dataset.kind === next));
   const btn = document.getElementById('leaningsLink');
   btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
