@@ -7518,6 +7518,7 @@ function flutingTexture(){
 
 // ---------- device flags ----------
 // LITE: phones and low-power devices get a lighter 3D scene (no shadows, lower resolution, fewer particles)
+// LITE: phones and low-power devices skip soft shadows (the expensive part) and some dust; sharpness stays full
 const LITE = window.matchMedia('(max-width: 760px)').matches || ((navigator.hardwareConcurrency || 8) <= 4);
 // REDUCED_MOTION: honors the "reduce motion" accessibility setting (no camera drift or fly-in)
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -7636,7 +7637,7 @@ function initScene(){
   introStart = REDUCED_MOTION ? Date.now() - 10000 : Date.now();  // reduced motion: skip the fly-in
 
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, LITE ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));   // crisp on every screen
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = !LITE;   // soft shadows are the heaviest effect, so phones skip them
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -7644,14 +7645,14 @@ function initScene(){
 
   // effects chain. WebGL2 gets a multisampled buffer so edges stay smooth after post-processing
   const pr = renderer.getPixelRatio();
-  const rt = (!LITE && renderer.capabilities.isWebGL2)
+  const rt = renderer.capabilities.isWebGL2   // smooth (anti-aliased) edges everywhere, phones included
     ? new THREE.WebGLMultisampleRenderTarget(width*pr, height*pr, { format: THREE.RGBAFormat })
     : undefined;
   composer = new THREE.EffectComposer(renderer, rt);
   composer.setPixelRatio(pr);
   composer.setSize(width, height);
   composer.addPass(new THREE.RenderPass(scene, camera));
-  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width/(LITE ? 4 : 2), height/(LITE ? 4 : 2)), 0.6, 0.5, 0.8);
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width/2, height/2), 0.6, 0.5, 0.8);
   composer.addPass(bloomPass);
   gradePass = new THREE.ShaderPass(GradeShader);
   composer.addPass(gradePass);
@@ -8272,8 +8273,28 @@ function triggerFullSymposiumFlourish(){
   symposiumFlourishUntil = Date.now() + 2200;
 }
 
+// safety net: watch a few seconds of frames after the intro; if this device is struggling
+// (under ~25 frames a second), drop to 1.5x resolution once. Most phones never trigger it.
+let perfFrames = 0, perfStart = 0, perfChecked = false;
+function checkPerformance(){
+  if(perfChecked || !introDone) return;
+  const now = performance.now();
+  if(!perfStart){ perfStart = now; perfFrames = 0; return; }
+  perfFrames++;
+  if(now - perfStart > 4000){
+    perfChecked = true;
+    const fps = perfFrames * 1000 / (now - perfStart);
+    if(fps < 25 && renderer.getPixelRatio() > 1.5){
+      renderer.setPixelRatio(1.5);
+      if(composer){ composer.setPixelRatio(1.5); composer.setSize(wrap.clientWidth, wrap.clientHeight); }
+      console.info('Symposium: lowered resolution for smoother motion (' + fps.toFixed(0) + ' fps)');
+    }
+  }
+}
+
 function animate(){
   requestAnimationFrame(animate);
+  checkPerformance();
 
   if(!introDone){
     const p = Math.min(1, (Date.now() - introStart) / 2600);
