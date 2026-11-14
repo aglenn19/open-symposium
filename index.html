@@ -517,6 +517,15 @@
     line-height: 1.2;
   }
 
+  .transcript-wrap{ position:relative; }
+  .jump-latest{
+    position:absolute; left:50%; bottom:1rem; transform: translate(-50%, 12px);
+    opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:0.85rem;
+    color: var(--ink-deep); background: var(--thread); border:none; border-radius:999px;
+    padding:0.45rem 1.1rem; cursor:pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
+  .jump-latest.show{ opacity:1; pointer-events:auto; transform: translate(-50%, 0); }
   .transcript{
     display:block;
     width: 100%;
@@ -556,6 +565,51 @@
     transition: border-color 0.3s ease, background 0.3s ease;
   }
   .t-entry:hover{ background: rgba(227,178,60,0.06); }
+  .t-to{ color: var(--text-dim); font-style: italic; }
+  /* agree / disagree on each line */
+  .t-actions{ display:flex; align-items:center; gap:0.45rem; margin-top:0.5rem; flex-wrap:wrap; }
+  .t-actions .t-share{ display:inline; margin:0 0 0 0.4rem; }
+  .t-vote{
+    font-family:'Fraunces', serif; font-style:italic; font-size:0.76rem; cursor:pointer;
+    padding:0.18rem 0.65rem; border-radius:999px; background:transparent;
+    color: var(--text-dim); border:1px solid var(--panel-line);
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .t-vote:hover{ color: var(--text); border-color: var(--thread-dim); }
+  .t-vote.agree.on{ color: var(--ink-deep); background: var(--thread); border-color: var(--thread); }
+  .t-vote.disagree.on{ color: #fff3ef; background: #a8554c; border-color: #a8554c; }
+  .t-entry[data-vote="agree"]{ border-left-color: var(--thread); }
+  .t-entry[data-vote="disagree"]{ border-left-color: #a8554c; }
+  .tool-btn.bump{ animation: bump .45s ease; }
+  @keyframes bump{ 40%{ transform: scale(1.25); } }
+  /* the leanings panel */
+  .leanings-panel{ width:100%; max-width:620px; }
+  .lean-head{ font-family:'Fraunces', serif; font-style:italic; font-size:1.02rem; color: var(--text); margin:0 0 0.2rem; line-height:1.45; }
+  .lean-head b{ color: var(--thread); font-weight:500; }
+  .lean-head i.neg{ color: #d98a80; font-style:italic; }
+  .lean-section{ font-family:'Fraunces', serif; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; font-size:0.7rem; color: var(--text-dim); margin:1.1rem 0 0.6rem; }
+  .lean-row{ display:flex; align-items:center; gap:0.7rem; margin-bottom:0.55rem; }
+  .lean-row .t-face{ width:34px; height:34px; margin:0; }
+  .lean-row .t-face canvas{ width:20px; height:20px; }
+  .lean-name{ font-family:'Fraunces', serif; font-style:italic; color: var(--text); font-size:0.88rem; width:7.5rem; flex-shrink:0; }
+  .lean-bar{ flex:1; height:8px; border-radius:4px; background: rgba(255,255,255,0.04); display:flex; overflow:hidden; }
+  .lean-bar .a{ background: var(--thread); }
+  .lean-bar .d{ background: #a8554c; }
+  .lean-count{ font-family:'Space Grotesk', sans-serif; font-size:0.74rem; color: var(--text-dim); width:4.4rem; text-align:right; flex-shrink:0; }
+  .lean-empty{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.9rem; margin:0; }
+  .lean-reset{ display:inline-block; margin-top:0.8rem; font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--text-dim); }
+  .verdict{
+    margin: 1.4rem 0 0.4rem; padding: 1.1rem 1.2rem; border-radius: 12px;
+    border: 1px solid var(--thread-dim); background: linear-gradient(180deg, rgba(227,178,60,0.09), rgba(227,178,60,0.02));
+  }
+  .verdict .v-title{ font-family:'Fraunces', serif; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; font-size:0.72rem; color: var(--thread); margin:0 0 0.8rem; }
+  .verdict .v-wait{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); margin:0; }
+  .verdict.pending .v-wait::after{ content:'\258c'; color: var(--thread); animation: blink 0.9s step-start infinite; margin-left:2px; }
+  .verdict .v-row{ margin-bottom: 0.75rem; }
+  .verdict .v-label{ font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--text-dim); margin:0 0 0.15rem; }
+  .verdict .v-text{ font-family:'Fraunces', serif; font-size:0.96rem; line-height:1.5; color: var(--text); margin:0; }
+  .verdict .v-quote{ margin: 0.9rem 0 0; padding-left: 0.9rem; border-left: 2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem; line-height:1.5; color: var(--text); }
+  .verdict .v-quote cite{ display:block; margin-top:0.35rem; font-size:0.8rem; color: var(--thread); font-style:normal; }
   .t-entry.with-face{ display:flex; align-items:flex-start; gap:0.85rem; }
   .t-body{ flex:1; min-width:0; }
   .t-face{
@@ -692,6 +746,7 @@
   #historyLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012a9%209%200%201%200%203-6.7%27/%3E%3Cpath%20d%3D%27M3%204v5h5%27/%3E%3Cpath%20d%3D%27M12%207v5l3%202%27/%3E%3C/svg%3E"); }
   #soundToggle{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%209v6h4l5%204V5L8%209z%27/%3E%3Cpath%20d%3D%27M16.5%208.5a5%205%200%200%201%200%207%27/%3E%3Cpath%20d%3D%27M19%206a8.5%208.5%200%200%201%200%2012%27/%3E%3C/svg%3E"); }
   #voiceToggle{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%279%27%20y%3D%273%27%20width%3D%276%27%20height%3D%2711%27%20rx%3D%273%27/%3E%3Cpath%20d%3D%27M5%2011a7%207%200%200%200%2014%200%27/%3E%3Cpath%20d%3D%27M12%2018v3%27/%3E%3C/svg%3E"); }
+  #leaningsLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%203v18%27/%3E%3Cpath%20d%3D%27M7%2021h10%27/%3E%3Cpath%20d%3D%27M4%207h16%27/%3E%3Cpath%20d%3D%27M4%207l-3%207a3%203%200%200%200%206%200z%27/%3E%3Cpath%20d%3D%27M20%207l-3%207a3%203%200%200%200%206%200z%27/%3E%3C/svg%3E"); }
   #apiKeyLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%278%27%20cy%3D%2715%27%20r%3D%274%27/%3E%3Cpath%20d%3D%27M11%2012l9-9%27/%3E%3Cpath%20d%3D%27M17%206l3%203%27/%3E%3Cpath%20d%3D%27M15%208l2%202%27/%3E%3C/svg%3E"); }
 
   .layout{
@@ -765,11 +820,13 @@
         <a href="#" id="historyLink" class="tool-btn" title="Past conversations" aria-label="Past conversations">History</a>
         <a href="#" id="soundToggle" class="tool-btn" title="Ambient sound: off" aria-label="Ambient sound">Sound: off</a>
         <a href="#" id="voiceToggle" class="tool-btn" title="Read lines aloud: off" aria-label="Read lines aloud">Voice: off</a>
+        <a href="#" id="leaningsLink" class="tool-btn" title="Your leanings" aria-label="Your leanings">Leanings</a>
         <a href="#" id="apiKeyLink" class="tool-btn" title="Your API key" aria-label="Your API key">API Key</a>
       </div>
     </div>
 
     <div id="historyPanel" class="picker-panel"></div>
+    <div id="leaningsPanel" class="picker-panel leanings-panel"></div>
 
     <div id="apiKeyPanel" class="picker-panel">
       <p style="margin:0 0 0.6rem; color:var(--text-dim); font-family:'Fraunces',serif; font-style:italic; font-size:0.95rem;">
@@ -808,8 +865,11 @@
   </div>
 
   <div class="layout-right">
+    <div class="transcript-wrap">
     <div class="transcript" id="transcript">
       <p class="transcript-placeholder" id="transcriptPlaceholder">Ask something below — the conversation unfolds here, live, as each round arrives</p>
+    </div>
+    <button type="button" id="jumpLatest" class="jump-latest">New replies &darr;</button>
     </div>
     <button type="button" id="stopBtn" class="stop-btn" style="display:none;">Stop</button>
     <div class="chime-in-row" id="chimeInRow" style="display:none;">
@@ -7870,6 +7930,7 @@ function animate(){
   }
 
   // the follow-spot glides to the seat the camera is focusing on, and fades out when nobody is
+  updateThreads();
   if(focusLight){
     const active = desiredTarget.lengthSq() > 0.0001;
     focusTargetObj.position.lerp(new THREE.Vector3(desiredTarget.x / 0.32, tableTopY, desiredTarget.z / 0.32), 0.08);
@@ -7969,6 +8030,207 @@ function hideCutaway(){
 
 document.getElementById('cutaway').addEventListener('click', hideCutaway); // tap to peek back at the table
 
+// ---------- threads: a gold arc from each speaker to the person they're answering ----------
+// Every reply draws a new thread across the table; older threads fade but stay,
+// so over a conversation you can see who keeps clashing with whom.
+let threadObjs = [];
+function seatPointFor(name){
+  if(name === 'You'){ // the living person sits at the empty "+" chair
+    const e = seatObjects.find(o => o.isOpen);
+    return e ? new THREE.Vector3(e.x*0.86, 0.9, e.z*0.86) : null;
+  }
+  const e = seatObjects.find(o => seats[o.index] && seats[o.index].name === name);
+  return e ? new THREE.Vector3(e.x*0.86, 1.05, e.z*0.86) : null;  // just above their head
+}
+function drawThread(from, to){
+  const a = seatPointFor(from), b = seatPointFor(to);
+  if(!a || !b) return;
+  threadObjs.forEach(t => { t.target = Math.max(0.16, t.target * 0.6); }); // older threads fade back
+  const mid = a.clone().add(b).multiplyScalar(0.5);
+  mid.y = 1.6 + a.distanceTo(b) * 0.18;                                    // longer reach, higher arc
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+  const geo = new THREE.TubeGeometry(curve, 64, 0.022, 6, false);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffc95c, transparent: true, opacity: 0, depthWrite: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 5;
+  geo.setDrawRange(0, 0);
+  scene.add(mesh);
+  const spark = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffd98a, transparent:true, blending: THREE.AdditiveBlending, depthWrite:false }));
+  spark.scale.setScalar(0.35); scene.add(spark);
+  threadObjs.push({ mesh, curve, spark, born: performance.now(), target: 0.95, total: geo.index.count });
+}
+function updateThreads(){
+  const now = performance.now();
+  threadObjs.forEach(t => {
+    const p = Math.min(1, (now - t.born) / 1100);          // draws itself across the table in ~1s
+    const eased = 1 - Math.pow(1 - p, 3);
+    t.mesh.geometry.setDrawRange(0, Math.floor(t.total * eased / 6) * 6);
+    t.mesh.material.opacity += (t.target - t.mesh.material.opacity) * 0.08;
+    if(t.spark){
+      if(p < 1){ t.spark.position.copy(t.curve.getPoint(eased)); }
+      else { scene.remove(t.spark); t.spark = null; }
+    }
+  });
+}
+function clearThreads(){
+  threadObjs.forEach(t => { scene.remove(t.mesh); if(t.spark) scene.remove(t.spark); t.mesh.geometry.dispose(); });
+  threadObjs = [];
+}
+
+// ---------- the verdict: a closing card summing up where the table landed ----------
+async function askVerdict(question, turns){
+  const apiKey = getStoredApiKey();
+  if(!apiKey) return null;
+  const prompt = `Here is a roundtable conversation between philosophers on the question: "${question}"\n\n` +
+    turns.map(t => `${t.name}${t.to ? ' (to ' + t.to + ')' : ''}: ${t.line}`).join('\n') +
+    `\n\nAs a neutral chronicler, sum up where the table landed. Respond ONLY with valid JSON, no code fences:\n` +
+    `{"agreed": "one or two sentences on what most of them converged on (or that they found no common ground)",\n` +
+    ` "split": "one or two sentences naming the sharpest disagreement and who was on each side",\n` +
+    ` "line": {"name": "speaker", "text": "the single most memorable line, quoted exactly from the conversation"}}`;
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: SYMPOSIUM_MODEL, max_tokens: 700, messages: [{ role: "user", content: prompt }] })
+  });
+  const data = await res.json();
+  if(data.error) return null;
+  const tb = (data.content || []).find(b => b.type === 'text');
+  try { return JSON.parse((tb ? tb.text : '').replace(/```json|```/g, '').trim()); } catch(e){ return null; }
+}
+
+async function addVerdict(gen){
+  const panel = document.getElementById('transcript');
+  const spoken = fullTranscript.filter(t => t.name !== 'You');
+  if(spoken.length < 3 || !currentQuestion) return;
+  const old = panel.querySelector('.verdict'); if(old) old.remove();
+  const card = document.createElement('div');
+  card.className = 'verdict pending';
+  card.innerHTML = '<p class="v-title">The table’s verdict</p><p class="v-wait">Weighing what was said…</p>';
+  panel.appendChild(card);
+  followScroll(false);
+  let v = null;
+  try { v = await askVerdict(currentQuestion, fullTranscript); } catch(e){ console.error(e); }
+  if(gen !== renderGen || !v){ card.remove(); return; }
+  card.classList.remove('pending');
+  card.innerHTML = '';
+  const add = (cls, label, text) => {
+    const row = document.createElement('div'); row.className = 'v-row ' + cls;
+    const l = document.createElement('p'); l.className = 'v-label'; l.textContent = label;
+    const t = document.createElement('p'); t.className = 'v-text'; t.textContent = text;
+    row.appendChild(l); row.appendChild(t); card.appendChild(row);
+  };
+  const title = document.createElement('p'); title.className = 'v-title'; title.textContent = 'The table’s verdict';
+  card.appendChild(title);
+  if(v.agreed) add('agreed', 'Where they met', v.agreed);
+  if(v.split) add('split', 'Where they split', v.split);
+  if(v.line && v.line.text){
+    const q = document.createElement('blockquote'); q.className = 'v-quote';
+    q.textContent = '“' + v.line.text + '”';
+    const by = document.createElement('cite'); by.textContent = '— ' + (v.line.name || '');
+    q.appendChild(by); card.appendChild(q);
+  }
+  followScroll(false);
+}
+
+// ---------- your leanings: agree / disagree with lines, tracked per philosopher ----------
+// All-time totals are saved in this browser; "this conversation" resets with each new question.
+const LEAN_KEY = 'symposium-leanings';
+let sessionLean = {};
+function loadLean(){ try { return JSON.parse(localStorage.getItem(LEAN_KEY) || '{}'); } catch(e){ return {}; } }
+function saveLean(o){ try { localStorage.setItem(LEAN_KEY, JSON.stringify(o)); } catch(e){ /* storage blocked: session only */ } }
+function bumpLean(store, name, kind, d){
+  store[name] = store[name] || { agree:0, disagree:0 };
+  store[name][kind] = Math.max(0, store[name][kind] + d);
+}
+function castVote(entry, name, kind){
+  const prev = entry.dataset.vote || '';
+  const next = prev === kind ? '' : kind;          // clicking the same side again undoes it
+  const all = loadLean();
+  if(prev){ bumpLean(all, name, prev, -1); bumpLean(sessionLean, name, prev, -1); }
+  if(next){ bumpLean(all, name, next, 1);  bumpLean(sessionLean, name, next, 1); }
+  saveLean(all);
+  if(next) entry.dataset.vote = next; else delete entry.dataset.vote;
+  entry.querySelectorAll('.t-vote').forEach(b => b.classList.toggle('on', b.dataset.kind === next));
+  const btn = document.getElementById('leaningsLink');
+  btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
+  if(document.getElementById('leaningsPanel').classList.contains('show')) renderLeanings();
+}
+function addVoteButtons(entry, body, name){
+  const row = document.createElement('div'); row.className = 't-actions';
+  [['agree','Agree'], ['disagree','Disagree']].forEach(([kind, label]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 't-vote ' + kind; b.dataset.kind = kind; b.textContent = label;
+    b.addEventListener('click', ev => { ev.stopPropagation(); castVote(entry, name, kind); });
+    row.appendChild(b);
+  });
+  const share = body.querySelector('.t-share');
+  if(share) row.appendChild(share);
+  body.appendChild(row);
+}
+function leanFace(name){
+  const face = document.createElement('div'); face.className = 't-face';
+  const seat = ALL_SEATS.find(s => s.name === name);
+  face.appendChild(buildChipIcon(name, !!(seat && seat.tribute), false));
+  findPortrait(name).then(p => {
+    if(!p) return;
+    face.innerHTML = ''; face.classList.add('has-portrait');
+    face.style.backgroundImage = 'url("' + (p.type === 'image' ? p.url : p.url.replace(/\.mp4$/, '.jpg')) + '")';
+  });
+  return face;
+}
+function leanSection(panel, title, store){
+  const rows = Object.entries(store)
+    .map(([name, v]) => ({ name, a: v.agree || 0, d: v.disagree || 0 }))
+    .filter(r => r.a + r.d > 0)
+    .sort((x, y) => (y.a - y.d) - (x.a - x.d) || (y.a + y.d) - (x.a + x.d));
+  const h = document.createElement('p'); h.className = 'lean-section'; h.textContent = title; panel.appendChild(h);
+  if(!rows.length){
+    const e = document.createElement('p'); e.className = 'lean-empty';
+    e.textContent = 'Agree or disagree with lines in the conversation and your leanings show up here.';
+    panel.appendChild(e); return rows;
+  }
+  const max = Math.max(...rows.map(r => r.a + r.d));
+  rows.forEach(r => {
+    const row = document.createElement('div'); row.className = 'lean-row';
+    row.appendChild(leanFace(r.name));
+    const n = document.createElement('span'); n.className = 'lean-name'; n.textContent = r.name; row.appendChild(n);
+    const bar = document.createElement('div'); bar.className = 'lean-bar';
+    const a = document.createElement('span'); a.className = 'a'; a.style.width = (r.a / max * 100) + '%';
+    const d = document.createElement('span'); d.className = 'd'; d.style.width = (r.d / max * 100) + '%';
+    bar.appendChild(a); bar.appendChild(d); row.appendChild(bar);
+    const c = document.createElement('span'); c.className = 'lean-count'; c.textContent = r.a + ' ✓  ' + r.d + ' ✗';
+    row.appendChild(c);
+    panel.appendChild(row);
+  });
+  return rows;
+}
+function renderLeanings(){
+  const panel = document.getElementById('leaningsPanel');
+  panel.innerHTML = '';
+  const all = loadLean();
+  // headline from all-time totals: who you side with most, who you push back on most
+  const scored = Object.entries(all).map(([n, v]) => ({ n, net: (v.agree||0) - (v.disagree||0), t: (v.agree||0) + (v.disagree||0) })).filter(r => r.t > 0);
+  const head = document.createElement('p'); head.className = 'lean-head';
+  if(scored.length){
+    const best = scored.slice().sort((x, y) => y.net - x.net || y.t - x.t)[0];
+    const worst = scored.slice().sort((x, y) => x.net - y.net || y.t - x.t)[0];
+    head.innerHTML = '';
+    if(best.net > 0){ head.append('You side most with '); const b = document.createElement('b'); b.textContent = best.n; head.appendChild(b); }
+    if(worst.net < 0){ if(best.net > 0) head.append(' · '); head.append('you push back most on '); const w = document.createElement('i'); w.className = 'neg'; w.textContent = worst.n; head.appendChild(w); }
+    if(!head.textContent) head.textContent = 'Evenly split so far.';
+  } else {
+    head.textContent = 'Your leanings';
+  }
+  panel.appendChild(head);
+  leanSection(panel, 'This conversation', sessionLean);
+  leanSection(panel, 'All time', all);
+  if(scored.length){
+    const r = document.createElement('a'); r.href = '#'; r.className = 'lean-reset'; r.textContent = 'Reset all-time leanings';
+    r.addEventListener('click', ev => { ev.preventDefault(); saveLean({}); renderLeanings(); });
+    panel.appendChild(r);
+  }
+}
+
 // ---------- faces in the transcript ----------
 // Wraps a transcript entry as [face] [name + line + share], using portraits/<name>.jpg when it
 // exists, otherwise the philosopher's symbol; "You" gets a simple badge.
@@ -7999,6 +8261,7 @@ function decorateEntry(entry){
       });
     });
   }
+  if(name !== 'You') addVoteButtons(entry, body, name);
   entry.classList.add('with-face');
   entry.appendChild(face);
   entry.appendChild(body);
@@ -8190,6 +8453,43 @@ document.getElementById('pickerDuel').addEventListener('click', (e) => {
 
 let renderGen = 0;
 let fullTranscript = [];
+// ---------- transcript scrolling: follow new replies only while you're at the bottom ----------
+let followTranscript = true;     // true while the reader is at (or near) the latest line
+let autoScrollUntil = 0;         // scroll events before this time are ours, not the reader's
+function transcriptEl(){ return document.getElementById('transcript'); }
+function nearBottom(p){ return p.scrollHeight - p.scrollTop - p.clientHeight < 90; }
+function showJump(on){ const b = document.getElementById('jumpLatest'); if(b) b.classList.toggle('show', on); }
+// call after adding to the transcript; force = true when the reader just acted (asked, chimed in)
+function followScroll(force){
+  const p = transcriptEl();
+  if(force) followTranscript = true;
+  if(followTranscript){
+    autoScrollUntil = performance.now() + 900;
+    p.scrollTo({ top: p.scrollHeight, behavior: 'smooth' });
+    showJump(false);
+  } else {
+    showJump(true);
+  }
+}
+// keep the line that's typing in view, but only when following
+function pinWhileTyping(){
+  if(!followTranscript) return;
+  const p = transcriptEl();
+  autoScrollUntil = performance.now() + 150;
+  p.scrollTop = p.scrollHeight;
+}
+(function(){
+  const p = transcriptEl();
+  const userMoved = () => { autoScrollUntil = 0; };            // any real scroll gesture wins immediately
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => p.addEventListener(ev, userMoved, { passive: true }));
+  p.addEventListener('scroll', () => {
+    if(performance.now() < autoScrollUntil) return;
+    followTranscript = nearBottom(p);
+    if(followTranscript) showJump(false);
+  });
+  document.getElementById('jumpLatest').addEventListener('click', () => followScroll(true));
+})();
+
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 function wrapCanvasText(ctx, text, maxWidth){
@@ -8257,6 +8557,8 @@ function exportLineCard(name, line){
 
 function resetTranscriptPanel(){
   renderGen++;
+  followTranscript = true; showJump(false);
+  clearThreads();
   hideCutaway(); // cancel any in-flight typing from a prior question — stale fetch results get discarded when they arrive
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   fullTranscript = [];
@@ -8275,6 +8577,9 @@ function resetTranscriptPanel(){
 
 function startNewTranscript(question){
   renderGen++;
+  followTranscript = true; showJump(false);
+  sessionLean = {};
+  clearThreads();
   fullTranscript = [];
   document.getElementById('continueLink').style.display = 'none';
   document.getElementById('copyLink').style.display = 'none';
@@ -8296,6 +8601,7 @@ async function typeLine(el, text, gen, speed){
   for(let i=1;i<=text.length;i++){
     if(gen !== renderGen) return;
     el.textContent = text.slice(0, i);
+    pinWhileTyping();
     await sleep(speed);
   }
   if(gen === renderGen) el.textContent = text;
@@ -8334,6 +8640,8 @@ async function appendTurnsTyped(turns, gen){
     const nameEl = document.createElement('p');
     nameEl.className = 't-name';
     nameEl.textContent = turn.name;
+    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + turn.to; nameEl.appendChild(toEl); }
+    if(turn.to) drawThread(turn.name, turn.to);
 
     const lineEl = document.createElement('p');
     lineEl.className = 't-line typing';
@@ -8349,7 +8657,7 @@ async function appendTurnsTyped(turns, gen){
     entry.appendChild(lineEl);
     entry.appendChild(shareBtn);
     decorateEntry(entry); panel.appendChild(entry);
-    panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
+    followScroll(false);
 
     await sleep(500);
     if(gen !== renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); return; }
@@ -8369,7 +8677,10 @@ async function appendTurnsTyped(turns, gen){
   if(gen === renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); }
 }
 
-// one call to the model, capped at the platform's required max_tokens:1000.
+// which Claude model voices the table (change this one line to switch models)
+const SYMPOSIUM_MODEL = "claude-sonnet-5-5";
+
+// one call to the model per round.
 // when priorTurns is non-empty, the prior conversation is included as plain-text
 // context and the model is told to CONTINUE it — real replies to real lines,
 // not a fresh isolated round — which is what turns this into an actual dialogue.
@@ -8386,7 +8697,7 @@ async function askTableRound(question, priorTurns, activeNames){
       (hasUserTurn ? ` Any line attributed to "You" is the actual living person who is part of this conversation, speaking for themselves — not a historical figure. Where a "You" line appears, the thinkers should notice it and respond to it directly and specifically (address them as "you", engage with what they actually said), the way people at a real table would turn to someone who just spoke up, rather than talking past them.` : '');
   }
 
-  const prompt = `You are staging a live roundtable CONVERSATION between historical philosophers seated at a table, discussing a real question below. Draw on each thinker's actual documented philosophy, arguments, and characteristic rhetorical style as accurately as you can — this should sound like something they might genuinely have argued, grounded in their real recorded positions and the way they actually reasoned and spoke, not a generic gesture at their reputation. This is not isolated statements — it is a genuine back-and-forth: thinkers respond to the question AND to what others just said, agreeing, disagreeing, building on, or challenging each other by name where it's natural, the way real philosophical disagreement actually sounds — including real tension between incompatible worldviews where it exists. Persona notes for each seated thinker (a starting point, not a ceiling — draw on everything else you know about them too):\n${personaText}${priorText}\n\nWrite ${priorTurns.length ? 'about ' + turnTarget + ' more' : 'about ' + turnTarget} turns. Each turn is ONE thinker speaking (1–3 sentences, first person, in character, may reference another seated thinker by name). Respond ONLY with valid JSON — an array of objects with "name" and "line" keys, in speaking order, using only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no narration outside the JSON array.\n\nThe question: ${question}`;
+  const prompt = `You are staging a live roundtable CONVERSATION between historical philosophers seated at a table, discussing a real question below. Draw on each thinker's actual documented philosophy, arguments, and characteristic rhetorical style as accurately as you can — this should sound like something they might genuinely have argued, grounded in their real recorded positions and the way they actually reasoned and spoke, not a generic gesture at their reputation. This is not isolated statements — it is a genuine back-and-forth: thinkers respond to the question AND to what others just said, agreeing, disagreeing, building on, or challenging each other by name where it's natural, the way real philosophical disagreement actually sounds — including real tension between incompatible worldviews where it exists. Persona notes for each seated thinker (a starting point, not a ceiling — draw on everything else you know about them too):\n${personaText}${priorText}\n\nWrite ${priorTurns.length ? 'about ' + turnTarget + ' more' : 'about ' + turnTarget} turns. Each turn is ONE thinker speaking (2–4 sentences, first person, in character, with a concrete argument, image or example rather than a slogan). Most turns should answer one specific person at the table. Respond ONLY with valid JSON — an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no narration outside the JSON array.\n\nThe question: ${question}`;
 
   const apiKey = getStoredApiKey();
   if(!apiKey){
@@ -8404,8 +8715,8 @@ async function askTableRound(question, priorTurns, activeNames){
       "anthropic-dangerous-direct-browser-access": "true"
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
+      model: SYMPOSIUM_MODEL,
+      max_tokens: 2400,
       messages: [{ role: "user", content: prompt }]
     })
   });
@@ -8418,7 +8729,11 @@ async function askTableRound(question, priorTurns, activeNames){
   const textBlock = (data.content || []).find(b => b.type === 'text');
   let raw = textBlock ? textBlock.text : '';
   raw = raw.replace(/```json|```/g, '').trim();
-  return JSON.parse(raw);
+  const turns = JSON.parse(raw);
+  const valid = new Set(activeNames.concat(['You']));
+  return turns
+    .filter(t => t && activeNames.includes(t.name) && typeof t.line === 'string')
+    .map(t => ({ name: t.name, line: t.line, to: (valid.has(t.to) && t.to !== t.name) ? t.to : null }));
 }
 
 // --- visitor-supplied API key: stored only in this browser, sent only to Anthropic ---
@@ -8502,6 +8817,10 @@ async function handleAskSubmit(){
       typeQueue = typeQueue.then(() => appendTurnsTyped(newTurns, myGen));
     });
     await typeQueue;
+    if(myGen === renderGen && fullTranscript.length){
+      status.textContent = "Discussing: \u201c" + q + "\u201d";
+      await addVerdict(myGen);
+    }
   } catch(err){
     if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
@@ -8606,6 +8925,7 @@ document.getElementById('continueLink').addEventListener('click', async (e) => {
     if(myGen !== renderGen) return; // a new question superseded this while we waited
     await appendTurnsTyped(more, myGen);
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
+    if(myGen === renderGen) await addVerdict(myGen);
   } catch(err){
     if(myGen === renderGen){
       status.textContent = statusMessageFor(err);
@@ -8642,7 +8962,7 @@ async function handleChimeIn(){
   entry.appendChild(nameEl);
   entry.appendChild(lineEl);
   decorateEntry(entry); panel.appendChild(entry);
-  panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
+  followScroll(true);
 
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
   const status = document.getElementById('askStatus');
@@ -8656,6 +8976,7 @@ async function handleChimeIn(){
     if(myGen !== renderGen) return;
     await appendTurnsTyped(more, myGen);
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
+    if(myGen === renderGen) await addVerdict(myGen);
   } catch(err){
     if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
@@ -8757,6 +9078,7 @@ function showStoredConversation(data){
     const nameEl = document.createElement('p');
     nameEl.className = 't-name';
     nameEl.textContent = turn.name;
+    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + turn.to; nameEl.appendChild(toEl); }
     const lineEl = document.createElement('p');
     lineEl.className = 't-line';
     lineEl.textContent = turn.line;
@@ -8780,6 +9102,19 @@ function showStoredConversation(data){
   document.getElementById('historyPanel').classList.remove('show');
   document.getElementById('askStatus').textContent = "Revisiting: \u201c" + data.question + "\u201d";
 }
+
+document.getElementById('leaningsLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  const panel = document.getElementById('leaningsPanel');
+  const open = panel.classList.contains('show');
+  document.getElementById('historyPanel').classList.remove('show');
+  document.getElementById('apiKeyPanel').classList.remove('show');
+  if(open){ panel.classList.remove('show'); return; }
+  renderLeanings(); panel.classList.add('show');
+});
+['historyLink', 'apiKeyLink'].forEach(id => document.getElementById(id).addEventListener('click', () => {
+  document.getElementById('leaningsPanel').classList.remove('show');
+}));
 
 document.getElementById('historyLink').addEventListener('click', async (e) => {
   e.preventDefault();
