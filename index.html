@@ -238,6 +238,58 @@
     touch-action: none;
   }
   #canvas-wrap:active{ cursor: grabbing; }
+
+  /* ---------- cinematic cutaway: close-up of whoever is speaking ---------- */
+  #cutaway{
+    position:absolute; inset:0; overflow:hidden; z-index:5;
+    opacity:0; pointer-events:none; cursor:pointer;
+    transition: opacity 0.9s ease;
+    background: var(--ink-deep, #090b16);
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 45%, black 60%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 45%, black 60%, transparent 100%);
+  }
+  #cutaway.show{ opacity:1; pointer-events:auto; }
+  #cutaway .cut-media{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    transform: scale(1.04); transform-origin: 45% 35%;
+  }
+  #cutaway.show .cut-media{ animation: cutPush 14s ease-out forwards; }
+  @keyframes cutPush{ from{ transform: scale(1.04); } to{ transform: scale(1.14); } }
+  /* warm firelight that breathes over the portrait */
+  #cutaway .cut-flicker{
+    position:absolute; inset:0; pointer-events:none; mix-blend-mode: soft-light;
+    background: radial-gradient(ellipse 70% 80% at 18% 55%, rgba(255,150,70,0.55), transparent 65%);
+    animation: cutFlicker 2.3s infinite steps(1, end);
+  }
+  @keyframes cutFlicker{
+    0%{opacity:.75} 13%{opacity:.9} 27%{opacity:.68} 41%{opacity:.95} 56%{opacity:.78} 70%{opacity:.88} 84%{opacity:.7} 100%{opacity:.82}
+  }
+  /* letterbox bars slide in like a film cut */
+  #cutaway .cut-bar{ position:absolute; left:0; right:0; height:9%; background:#000; transition: transform 0.9s ease; }
+  #cutaway .cut-bar.top{ top:0; transform: translateY(-100%); }
+  #cutaway .cut-bar.bottom{ bottom:0; transform: translateY(100%); }
+  #cutaway.show .cut-bar{ transform: translateY(0); }
+  #cutaway .cut-shade{
+    position:absolute; left:0; right:0; bottom:0; height:46%; pointer-events:none;
+    background: linear-gradient(to top, rgba(5,6,13,0.92), rgba(5,6,13,0));
+  }
+  #cutaway .cut-name{
+    position:absolute; left:9%; bottom:27%;
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500;
+    font-size: clamp(1.1rem, 3.4vw, 1.7rem); color: var(--thread);
+    letter-spacing: 0.02em; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+    opacity:0; transform: translateX(-12px); transition: opacity 0.8s ease 0.35s, transform 0.8s ease 0.35s;
+  }
+  #cutaway .cut-name::after{
+    content:''; display:block; height:1px; width:64px; margin-top:6px;
+    background: linear-gradient(to right, var(--thread), transparent);
+  }
+  #cutaway.show .cut-name{ opacity:1; transform:none; }
+  #cutaway .cut-sub{
+    position:absolute; left:9%; right:9%; bottom:12%;
+    font-family:'Fraunces', serif; font-size: clamp(0.82rem, 2.2vw, 1.02rem); line-height:1.45;
+    color: #ece8dc; text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+  }
   #canvas-wrap canvas{
     display:block; width:100%; height:100%;
     mask-image: radial-gradient(ellipse 78% 78% at 50% 42%, black 58%, transparent 100%);
@@ -661,11 +713,37 @@
       <a href="#" id="historyLink" class="picker-action">History</a>
       <a href="#" id="soundToggle" class="picker-action">Sound: off</a>
       <a href="#" id="voiceToggle" class="picker-action">Voice: off</a>
+      <a href="#" id="apiKeyLink" class="picker-action">API Key</a>
     </div>
 
     <div id="historyPanel" class="picker-panel"></div>
 
-    <div id="canvas-wrap"></div>
+    <div id="apiKeyPanel" class="picker-panel">
+      <p style="margin:0 0 0.6rem; color:var(--text-dim); font-family:'Fraunces',serif; font-style:italic; font-size:0.95rem;">
+        This table runs on your own Anthropic API key so the table's asker (not the site owner) covers the cost.
+        Get one free at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:var(--thread);">console.anthropic.com</a>.
+        Your key is stored only in this browser (never sent anywhere but Anthropic) — clear it anytime below.
+      </p>
+      <div class="ask-form" style="margin-top:0;">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+        <button type="button" id="apiKeySave">Save</button>
+      </div>
+      <div style="margin-top:0.6rem; display:flex; gap:1rem; align-items:center;">
+        <a href="#" id="apiKeyClear" class="picker-action">Clear saved key</a>
+        <span id="apiKeyStatus" style="color:var(--text-dim); font-size:0.85rem;"></span>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <div id="cutaway" title="Tap to return to the table">
+        <div class="cut-flicker"></div>
+        <div class="cut-shade"></div>
+        <div class="cut-bar top"></div>
+        <div class="cut-bar bottom"></div>
+        <p class="cut-name" id="cutName"></p>
+        <p class="cut-sub" id="cutSub"></p>
+      </div>
+    </div>
     <p class="stage-hint">Drag to orbit · scroll to zoom · tap a seat</p>
 
     <div class="detail" id="detail">
@@ -1749,6 +1827,920 @@
 
 </script>
 <script>
+/* Three.js r128 post-processing add-ons (MIT) — glow + effects chain */
+( function () {
+
+	/**
+ * Full-screen textured quad shader
+ */
+	var CopyShader = {
+		uniforms: {
+			'tDiffuse': {
+				value: null
+			},
+			'opacity': {
+				value: 1.0
+			}
+		},
+		vertexShader:
+  /* glsl */
+  `
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`,
+		fragmentShader:
+  /* glsl */
+  `
+
+		uniform float opacity;
+
+		uniform sampler2D tDiffuse;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vec4 texel = texture2D( tDiffuse, vUv );
+			gl_FragColor = opacity * texel;
+
+		}`
+	};
+
+	THREE.CopyShader = CopyShader;
+
+} )();
+
+( function () {
+
+	/**
+ * Luminosity
+ * http://en.wikipedia.org/wiki/Luminosity
+ */
+
+	const LuminosityHighPassShader = {
+		shaderID: 'luminosityHighPass',
+		uniforms: {
+			'tDiffuse': {
+				value: null
+			},
+			'luminosityThreshold': {
+				value: 1.0
+			},
+			'smoothWidth': {
+				value: 1.0
+			},
+			'defaultColor': {
+				value: new THREE.Color( 0x000000 )
+			},
+			'defaultOpacity': {
+				value: 0.0
+			}
+		},
+		vertexShader:
+  /* glsl */
+  `
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`,
+		fragmentShader:
+  /* glsl */
+  `
+
+		uniform sampler2D tDiffuse;
+		uniform vec3 defaultColor;
+		uniform float defaultOpacity;
+		uniform float luminosityThreshold;
+		uniform float smoothWidth;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vec4 texel = texture2D( tDiffuse, vUv );
+
+			vec3 luma = vec3( 0.299, 0.587, 0.114 );
+
+			float v = dot( texel.xyz, luma );
+
+			vec4 outputColor = vec4( defaultColor.rgb, defaultOpacity );
+
+			float alpha = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, v );
+
+			gl_FragColor = mix( outputColor, texel, alpha );
+
+		}`
+	};
+
+	THREE.LuminosityHighPassShader = LuminosityHighPassShader;
+
+} )();
+
+( function () {
+
+	class EffectComposer {
+
+		constructor( renderer, renderTarget ) {
+
+			this.renderer = renderer;
+
+			if ( renderTarget === undefined ) {
+
+				const parameters = {
+					minFilter: THREE.LinearFilter,
+					magFilter: THREE.LinearFilter,
+					format: THREE.RGBAFormat
+				};
+				const size = renderer.getSize( new THREE.Vector2() );
+				this._pixelRatio = renderer.getPixelRatio();
+				this._width = size.width;
+				this._height = size.height;
+				renderTarget = new THREE.WebGLRenderTarget( this._width * this._pixelRatio, this._height * this._pixelRatio, parameters );
+				renderTarget.texture.name = 'EffectComposer.rt1';
+
+			} else {
+
+				this._pixelRatio = 1;
+				this._width = renderTarget.width;
+				this._height = renderTarget.height;
+
+			}
+
+			this.renderTarget1 = renderTarget;
+			this.renderTarget2 = renderTarget.clone();
+			this.renderTarget2.texture.name = 'EffectComposer.rt2';
+			this.writeBuffer = this.renderTarget1;
+			this.readBuffer = this.renderTarget2;
+			this.renderToScreen = true;
+			this.passes = []; // dependencies
+
+			if ( THREE.CopyShader === undefined ) {
+
+				console.error( 'THREE.EffectComposer relies on THREE.CopyShader' );
+
+			}
+
+			if ( THREE.ShaderPass === undefined ) {
+
+				console.error( 'THREE.EffectComposer relies on THREE.ShaderPass' );
+
+			}
+
+			this.copyPass = new THREE.ShaderPass( THREE.CopyShader );
+			this.clock = new THREE.Clock();
+
+		}
+
+		swapBuffers() {
+
+			const tmp = this.readBuffer;
+			this.readBuffer = this.writeBuffer;
+			this.writeBuffer = tmp;
+
+		}
+
+		addPass( pass ) {
+
+			this.passes.push( pass );
+			pass.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+
+		}
+
+		insertPass( pass, index ) {
+
+			this.passes.splice( index, 0, pass );
+			pass.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+
+		}
+
+		removePass( pass ) {
+
+			const index = this.passes.indexOf( pass );
+
+			if ( index !== - 1 ) {
+
+				this.passes.splice( index, 1 );
+
+			}
+
+		}
+
+		isLastEnabledPass( passIndex ) {
+
+			for ( let i = passIndex + 1; i < this.passes.length; i ++ ) {
+
+				if ( this.passes[ i ].enabled ) {
+
+					return false;
+
+				}
+
+			}
+
+			return true;
+
+		}
+
+		render( deltaTime ) {
+
+			// deltaTime value is in seconds
+			if ( deltaTime === undefined ) {
+
+				deltaTime = this.clock.getDelta();
+
+			}
+
+			const currentRenderTarget = this.renderer.getRenderTarget();
+			let maskActive = false;
+
+			for ( let i = 0, il = this.passes.length; i < il; i ++ ) {
+
+				const pass = this.passes[ i ];
+				if ( pass.enabled === false ) continue;
+				pass.renderToScreen = this.renderToScreen && this.isLastEnabledPass( i );
+				pass.render( this.renderer, this.writeBuffer, this.readBuffer, deltaTime, maskActive );
+
+				if ( pass.needsSwap ) {
+
+					if ( maskActive ) {
+
+						const context = this.renderer.getContext();
+						const stencil = this.renderer.state.buffers.stencil; //context.stencilFunc( context.NOTEQUAL, 1, 0xffffffff );
+
+						stencil.setFunc( context.NOTEQUAL, 1, 0xffffffff );
+						this.copyPass.render( this.renderer, this.writeBuffer, this.readBuffer, deltaTime ); //context.stencilFunc( context.EQUAL, 1, 0xffffffff );
+
+						stencil.setFunc( context.EQUAL, 1, 0xffffffff );
+
+					}
+
+					this.swapBuffers();
+
+				}
+
+				if ( THREE.MaskPass !== undefined ) {
+
+					if ( pass instanceof THREE.MaskPass ) {
+
+						maskActive = true;
+
+					} else if ( pass instanceof THREE.ClearMaskPass ) {
+
+						maskActive = false;
+
+					}
+
+				}
+
+			}
+
+			this.renderer.setRenderTarget( currentRenderTarget );
+
+		}
+
+		reset( renderTarget ) {
+
+			if ( renderTarget === undefined ) {
+
+				const size = this.renderer.getSize( new THREE.Vector2() );
+				this._pixelRatio = this.renderer.getPixelRatio();
+				this._width = size.width;
+				this._height = size.height;
+				renderTarget = this.renderTarget1.clone();
+				renderTarget.setSize( this._width * this._pixelRatio, this._height * this._pixelRatio );
+
+			}
+
+			this.renderTarget1.dispose();
+			this.renderTarget2.dispose();
+			this.renderTarget1 = renderTarget;
+			this.renderTarget2 = renderTarget.clone();
+			this.writeBuffer = this.renderTarget1;
+			this.readBuffer = this.renderTarget2;
+
+		}
+
+		setSize( width, height ) {
+
+			this._width = width;
+			this._height = height;
+			const effectiveWidth = this._width * this._pixelRatio;
+			const effectiveHeight = this._height * this._pixelRatio;
+			this.renderTarget1.setSize( effectiveWidth, effectiveHeight );
+			this.renderTarget2.setSize( effectiveWidth, effectiveHeight );
+
+			for ( let i = 0; i < this.passes.length; i ++ ) {
+
+				this.passes[ i ].setSize( effectiveWidth, effectiveHeight );
+
+			}
+
+		}
+
+		setPixelRatio( pixelRatio ) {
+
+			this._pixelRatio = pixelRatio;
+			this.setSize( this._width, this._height );
+
+		}
+
+	}
+
+	class Pass {
+
+		constructor() {
+
+			// if set to true, the pass is processed by the composer
+			this.enabled = true; // if set to true, the pass indicates to swap read and write buffer after rendering
+
+			this.needsSwap = true; // if set to true, the pass clears its buffer before rendering
+
+			this.clear = false; // if set to true, the result of the pass is rendered to screen. This is set automatically by EffectComposer.
+
+			this.renderToScreen = false;
+
+		}
+
+		setSize( ) {}
+
+		render( ) {
+
+			console.error( 'THREE.Pass: .render() must be implemented in derived pass.' );
+
+		}
+
+	} // Helper for passes that need to fill the viewport with a single quad.
+
+
+	const _camera = new THREE.OrthographicCamera( - 1, 1, 1, - 1, 0, 1 ); // https://github.com/mrdoob/three.js/pull/21358
+
+
+	const _geometry = new THREE.BufferGeometry();
+
+	_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ - 1, 3, 0, - 1, - 1, 0, 3, - 1, 0 ], 3 ) );
+
+	_geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( [ 0, 2, 0, 0, 2, 0 ], 2 ) );
+
+	class FullScreenQuad {
+
+		constructor( material ) {
+
+			this._mesh = new THREE.Mesh( _geometry, material );
+
+		}
+
+		dispose() {
+
+			this._mesh.geometry.dispose();
+
+		}
+
+		render( renderer ) {
+
+			renderer.render( this._mesh, _camera );
+
+		}
+
+		get material() {
+
+			return this._mesh.material;
+
+		}
+
+		set material( value ) {
+
+			this._mesh.material = value;
+
+		}
+
+	}
+
+	THREE.EffectComposer = EffectComposer;
+	THREE.FullScreenQuad = FullScreenQuad;
+	THREE.Pass = Pass;
+
+} )();
+
+( function () {
+
+	class RenderPass extends THREE.Pass {
+
+		constructor( scene, camera, overrideMaterial, clearColor, clearAlpha ) {
+
+			super();
+			this.scene = scene;
+			this.camera = camera;
+			this.overrideMaterial = overrideMaterial;
+			this.clearColor = clearColor;
+			this.clearAlpha = clearAlpha !== undefined ? clearAlpha : 0;
+			this.clear = true;
+			this.clearDepth = false;
+			this.needsSwap = false;
+			this._oldClearColor = new THREE.Color();
+
+		}
+
+		render( renderer, writeBuffer, readBuffer
+			/*, deltaTime, maskActive */
+		) {
+
+			const oldAutoClear = renderer.autoClear;
+			renderer.autoClear = false;
+			let oldClearAlpha, oldOverrideMaterial;
+
+			if ( this.overrideMaterial !== undefined ) {
+
+				oldOverrideMaterial = this.scene.overrideMaterial;
+				this.scene.overrideMaterial = this.overrideMaterial;
+
+			}
+
+			if ( this.clearColor ) {
+
+				renderer.getClearColor( this._oldClearColor );
+				oldClearAlpha = renderer.getClearAlpha();
+				renderer.setClearColor( this.clearColor, this.clearAlpha );
+
+			}
+
+			if ( this.clearDepth ) {
+
+				renderer.clearDepth();
+
+			}
+
+			renderer.setRenderTarget( this.renderToScreen ? null : readBuffer ); // TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+
+			if ( this.clear ) renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+			renderer.render( this.scene, this.camera );
+
+			if ( this.clearColor ) {
+
+				renderer.setClearColor( this._oldClearColor, oldClearAlpha );
+
+			}
+
+			if ( this.overrideMaterial !== undefined ) {
+
+				this.scene.overrideMaterial = oldOverrideMaterial;
+
+			}
+
+			renderer.autoClear = oldAutoClear;
+
+		}
+
+	}
+
+	THREE.RenderPass = RenderPass;
+
+} )();
+
+( function () {
+
+	class ShaderPass extends THREE.Pass {
+
+		constructor( shader, textureID ) {
+
+			super();
+			this.textureID = textureID !== undefined ? textureID : 'tDiffuse';
+
+			if ( shader instanceof THREE.ShaderMaterial ) {
+
+				this.uniforms = shader.uniforms;
+				this.material = shader;
+
+			} else if ( shader ) {
+
+				this.uniforms = THREE.UniformsUtils.clone( shader.uniforms );
+				this.material = new THREE.ShaderMaterial( {
+					defines: Object.assign( {}, shader.defines ),
+					uniforms: this.uniforms,
+					vertexShader: shader.vertexShader,
+					fragmentShader: shader.fragmentShader
+				} );
+
+			}
+
+			this.fsQuad = new THREE.FullScreenQuad( this.material );
+
+		}
+
+		render( renderer, writeBuffer, readBuffer
+			/*, deltaTime, maskActive */
+		) {
+
+			if ( this.uniforms[ this.textureID ] ) {
+
+				this.uniforms[ this.textureID ].value = readBuffer.texture;
+
+			}
+
+			this.fsQuad.material = this.material;
+
+			if ( this.renderToScreen ) {
+
+				renderer.setRenderTarget( null );
+				this.fsQuad.render( renderer );
+
+			} else {
+
+				renderer.setRenderTarget( writeBuffer ); // TODO: Avoid using autoClear properties, see https://github.com/mrdoob/three.js/pull/15571#issuecomment-465669600
+
+				if ( this.clear ) renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+				this.fsQuad.render( renderer );
+
+			}
+
+		}
+
+	}
+
+	THREE.ShaderPass = ShaderPass;
+
+} )();
+
+( function () {
+
+	/**
+ * UnrealBloomPass is inspired by the bloom pass of Unreal Engine. It creates a
+ * mip map chain of bloom textures and blurs them with different radii. Because
+ * of the weighted combination of mips, and because larger blurs are done on
+ * higher mips, this effect provides good quality and performance.
+ *
+ * Reference:
+ * - https://docs.unrealengine.com/latest/INT/Engine/Rendering/PostProcessEffects/Bloom/
+ */
+
+	class UnrealBloomPass extends THREE.Pass {
+
+		constructor( resolution, strength, radius, threshold ) {
+
+			super();
+			this.strength = strength !== undefined ? strength : 1;
+			this.radius = radius;
+			this.threshold = threshold;
+			this.resolution = resolution !== undefined ? new THREE.Vector2( resolution.x, resolution.y ) : new THREE.Vector2( 256, 256 ); // create color only once here, reuse it later inside the render function
+
+			this.clearColor = new THREE.Color( 0, 0, 0 ); // render targets
+
+			const pars = {
+				minFilter: THREE.LinearFilter,
+				magFilter: THREE.LinearFilter,
+				format: THREE.RGBAFormat
+			};
+			this.renderTargetsHorizontal = [];
+			this.renderTargetsVertical = [];
+			this.nMips = 5;
+			let resx = Math.round( this.resolution.x / 2 );
+			let resy = Math.round( this.resolution.y / 2 );
+			this.renderTargetBright = new THREE.WebGLRenderTarget( resx, resy, pars );
+			this.renderTargetBright.texture.name = 'UnrealBloomPass.bright';
+			this.renderTargetBright.texture.generateMipmaps = false;
+
+			for ( let i = 0; i < this.nMips; i ++ ) {
+
+				const renderTargetHorizonal = new THREE.WebGLRenderTarget( resx, resy, pars );
+				renderTargetHorizonal.texture.name = 'UnrealBloomPass.h' + i;
+				renderTargetHorizonal.texture.generateMipmaps = false;
+				this.renderTargetsHorizontal.push( renderTargetHorizonal );
+				const renderTargetVertical = new THREE.WebGLRenderTarget( resx, resy, pars );
+				renderTargetVertical.texture.name = 'UnrealBloomPass.v' + i;
+				renderTargetVertical.texture.generateMipmaps = false;
+				this.renderTargetsVertical.push( renderTargetVertical );
+				resx = Math.round( resx / 2 );
+				resy = Math.round( resy / 2 );
+
+			} // luminosity high pass material
+
+
+			if ( THREE.LuminosityHighPassShader === undefined ) console.error( 'THREE.UnrealBloomPass relies on THREE.LuminosityHighPassShader' );
+			const highPassShader = THREE.LuminosityHighPassShader;
+			this.highPassUniforms = THREE.UniformsUtils.clone( highPassShader.uniforms );
+			this.highPassUniforms[ 'luminosityThreshold' ].value = threshold;
+			this.highPassUniforms[ 'smoothWidth' ].value = 0.01;
+			this.materialHighPassFilter = new THREE.ShaderMaterial( {
+				uniforms: this.highPassUniforms,
+				vertexShader: highPassShader.vertexShader,
+				fragmentShader: highPassShader.fragmentShader,
+				defines: {}
+			} ); // Gaussian Blur Materials
+
+			this.separableBlurMaterials = [];
+			const kernelSizeArray = [ 3, 5, 7, 9, 11 ];
+			resx = Math.round( this.resolution.x / 2 );
+			resy = Math.round( this.resolution.y / 2 );
+
+			for ( let i = 0; i < this.nMips; i ++ ) {
+
+				this.separableBlurMaterials.push( this.getSeperableBlurMaterial( kernelSizeArray[ i ] ) );
+				this.separableBlurMaterials[ i ].uniforms[ 'texSize' ].value = new THREE.Vector2( resx, resy );
+				resx = Math.round( resx / 2 );
+				resy = Math.round( resy / 2 );
+
+			} // Composite material
+
+
+			this.compositeMaterial = this.getCompositeMaterial( this.nMips );
+			this.compositeMaterial.uniforms[ 'blurTexture1' ].value = this.renderTargetsVertical[ 0 ].texture;
+			this.compositeMaterial.uniforms[ 'blurTexture2' ].value = this.renderTargetsVertical[ 1 ].texture;
+			this.compositeMaterial.uniforms[ 'blurTexture3' ].value = this.renderTargetsVertical[ 2 ].texture;
+			this.compositeMaterial.uniforms[ 'blurTexture4' ].value = this.renderTargetsVertical[ 3 ].texture;
+			this.compositeMaterial.uniforms[ 'blurTexture5' ].value = this.renderTargetsVertical[ 4 ].texture;
+			this.compositeMaterial.uniforms[ 'bloomStrength' ].value = strength;
+			this.compositeMaterial.uniforms[ 'bloomRadius' ].value = 0.1;
+			this.compositeMaterial.needsUpdate = true;
+			const bloomFactors = [ 1.0, 0.8, 0.6, 0.4, 0.2 ];
+			this.compositeMaterial.uniforms[ 'bloomFactors' ].value = bloomFactors;
+			this.bloomTintColors = [ new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 1, 1, 1 ), new THREE.Vector3( 1, 1, 1 ) ];
+			this.compositeMaterial.uniforms[ 'bloomTintColors' ].value = this.bloomTintColors; // copy material
+
+			if ( THREE.CopyShader === undefined ) {
+
+				console.error( 'THREE.UnrealBloomPass relies on THREE.CopyShader' );
+
+			}
+
+			const copyShader = THREE.CopyShader;
+			this.copyUniforms = THREE.UniformsUtils.clone( copyShader.uniforms );
+			this.copyUniforms[ 'opacity' ].value = 1.0;
+			this.materialCopy = new THREE.ShaderMaterial( {
+				uniforms: this.copyUniforms,
+				vertexShader: copyShader.vertexShader,
+				fragmentShader: copyShader.fragmentShader,
+				blending: THREE.AdditiveBlending,
+				depthTest: false,
+				depthWrite: false,
+				transparent: true
+			} );
+			this.enabled = true;
+			this.needsSwap = false;
+			this._oldClearColor = new THREE.Color();
+			this.oldClearAlpha = 1;
+			this.basic = new THREE.MeshBasicMaterial();
+			this.fsQuad = new THREE.FullScreenQuad( null );
+
+		}
+
+		dispose() {
+
+			for ( let i = 0; i < this.renderTargetsHorizontal.length; i ++ ) {
+
+				this.renderTargetsHorizontal[ i ].dispose();
+
+			}
+
+			for ( let i = 0; i < this.renderTargetsVertical.length; i ++ ) {
+
+				this.renderTargetsVertical[ i ].dispose();
+
+			}
+
+			this.renderTargetBright.dispose();
+
+		}
+
+		setSize( width, height ) {
+
+			let resx = Math.round( width / 2 );
+			let resy = Math.round( height / 2 );
+			this.renderTargetBright.setSize( resx, resy );
+
+			for ( let i = 0; i < this.nMips; i ++ ) {
+
+				this.renderTargetsHorizontal[ i ].setSize( resx, resy );
+				this.renderTargetsVertical[ i ].setSize( resx, resy );
+				this.separableBlurMaterials[ i ].uniforms[ 'texSize' ].value = new THREE.Vector2( resx, resy );
+				resx = Math.round( resx / 2 );
+				resy = Math.round( resy / 2 );
+
+			}
+
+		}
+
+		render( renderer, writeBuffer, readBuffer, deltaTime, maskActive ) {
+
+			renderer.getClearColor( this._oldClearColor );
+			this.oldClearAlpha = renderer.getClearAlpha();
+			const oldAutoClear = renderer.autoClear;
+			renderer.autoClear = false;
+			renderer.setClearColor( this.clearColor, 0 );
+			if ( maskActive ) renderer.state.buffers.stencil.setTest( false ); // Render input to screen
+
+			if ( this.renderToScreen ) {
+
+				this.fsQuad.material = this.basic;
+				this.basic.map = readBuffer.texture;
+				renderer.setRenderTarget( null );
+				renderer.clear();
+				this.fsQuad.render( renderer );
+
+			} // 1. Extract Bright Areas
+
+
+			this.highPassUniforms[ 'tDiffuse' ].value = readBuffer.texture;
+			this.highPassUniforms[ 'luminosityThreshold' ].value = this.threshold;
+			this.fsQuad.material = this.materialHighPassFilter;
+			renderer.setRenderTarget( this.renderTargetBright );
+			renderer.clear();
+			this.fsQuad.render( renderer ); // 2. Blur All the mips progressively
+
+			let inputRenderTarget = this.renderTargetBright;
+
+			for ( let i = 0; i < this.nMips; i ++ ) {
+
+				this.fsQuad.material = this.separableBlurMaterials[ i ];
+				this.separableBlurMaterials[ i ].uniforms[ 'colorTexture' ].value = inputRenderTarget.texture;
+				this.separableBlurMaterials[ i ].uniforms[ 'direction' ].value = UnrealBloomPass.BlurDirectionX;
+				renderer.setRenderTarget( this.renderTargetsHorizontal[ i ] );
+				renderer.clear();
+				this.fsQuad.render( renderer );
+				this.separableBlurMaterials[ i ].uniforms[ 'colorTexture' ].value = this.renderTargetsHorizontal[ i ].texture;
+				this.separableBlurMaterials[ i ].uniforms[ 'direction' ].value = UnrealBloomPass.BlurDirectionY;
+				renderer.setRenderTarget( this.renderTargetsVertical[ i ] );
+				renderer.clear();
+				this.fsQuad.render( renderer );
+				inputRenderTarget = this.renderTargetsVertical[ i ];
+
+			} // Composite All the mips
+
+
+			this.fsQuad.material = this.compositeMaterial;
+			this.compositeMaterial.uniforms[ 'bloomStrength' ].value = this.strength;
+			this.compositeMaterial.uniforms[ 'bloomRadius' ].value = this.radius;
+			this.compositeMaterial.uniforms[ 'bloomTintColors' ].value = this.bloomTintColors;
+			renderer.setRenderTarget( this.renderTargetsHorizontal[ 0 ] );
+			renderer.clear();
+			this.fsQuad.render( renderer ); // Blend it additively over the input texture
+
+			this.fsQuad.material = this.materialCopy;
+			this.copyUniforms[ 'tDiffuse' ].value = this.renderTargetsHorizontal[ 0 ].texture;
+			if ( maskActive ) renderer.state.buffers.stencil.setTest( true );
+
+			if ( this.renderToScreen ) {
+
+				renderer.setRenderTarget( null );
+				this.fsQuad.render( renderer );
+
+			} else {
+
+				renderer.setRenderTarget( readBuffer );
+				this.fsQuad.render( renderer );
+
+			} // Restore renderer settings
+
+
+			renderer.setClearColor( this._oldClearColor, this.oldClearAlpha );
+			renderer.autoClear = oldAutoClear;
+
+		}
+
+		getSeperableBlurMaterial( kernelRadius ) {
+
+			return new THREE.ShaderMaterial( {
+				defines: {
+					'KERNEL_RADIUS': kernelRadius,
+					'SIGMA': kernelRadius
+				},
+				uniforms: {
+					'colorTexture': {
+						value: null
+					},
+					'texSize': {
+						value: new THREE.Vector2( 0.5, 0.5 )
+					},
+					'direction': {
+						value: new THREE.Vector2( 0.5, 0.5 )
+					}
+				},
+				vertexShader: `varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+				fragmentShader: `#include <common>
+				varying vec2 vUv;
+				uniform sampler2D colorTexture;
+				uniform vec2 texSize;
+				uniform vec2 direction;
+
+				float gaussianPdf(in float x, in float sigma) {
+					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;
+				}
+				void main() {
+					vec2 invSize = 1.0 / texSize;
+					float fSigma = float(SIGMA);
+					float weightSum = gaussianPdf(0.0, fSigma);
+					vec3 diffuseSum = texture2D( colorTexture, vUv).rgb * weightSum;
+					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {
+						float x = float(i);
+						float w = gaussianPdf(x, fSigma);
+						vec2 uvOffset = direction * invSize * x;
+						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset).rgb;
+						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset).rgb;
+						diffuseSum += (sample1 + sample2) * w;
+						weightSum += 2.0 * w;
+					}
+					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);
+				}`
+			} );
+
+		}
+
+		getCompositeMaterial( nMips ) {
+
+			return new THREE.ShaderMaterial( {
+				defines: {
+					'NUM_MIPS': nMips
+				},
+				uniforms: {
+					'blurTexture1': {
+						value: null
+					},
+					'blurTexture2': {
+						value: null
+					},
+					'blurTexture3': {
+						value: null
+					},
+					'blurTexture4': {
+						value: null
+					},
+					'blurTexture5': {
+						value: null
+					},
+					'dirtTexture': {
+						value: null
+					},
+					'bloomStrength': {
+						value: 1.0
+					},
+					'bloomFactors': {
+						value: null
+					},
+					'bloomTintColors': {
+						value: null
+					},
+					'bloomRadius': {
+						value: 0.0
+					}
+				},
+				vertexShader: `varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+				fragmentShader: `varying vec2 vUv;
+				uniform sampler2D blurTexture1;
+				uniform sampler2D blurTexture2;
+				uniform sampler2D blurTexture3;
+				uniform sampler2D blurTexture4;
+				uniform sampler2D blurTexture5;
+				uniform sampler2D dirtTexture;
+				uniform float bloomStrength;
+				uniform float bloomRadius;
+				uniform float bloomFactors[NUM_MIPS];
+				uniform vec3 bloomTintColors[NUM_MIPS];
+
+				float lerpBloomFactor(const in float factor) {
+					float mirrorFactor = 1.2 - factor;
+					return mix(factor, mirrorFactor, bloomRadius);
+				}
+
+				void main() {
+					gl_FragColor = bloomStrength * ( lerpBloomFactor(bloomFactors[0]) * vec4(bloomTintColors[0], 1.0) * texture2D(blurTexture1, vUv) +
+						lerpBloomFactor(bloomFactors[1]) * vec4(bloomTintColors[1], 1.0) * texture2D(blurTexture2, vUv) +
+						lerpBloomFactor(bloomFactors[2]) * vec4(bloomTintColors[2], 1.0) * texture2D(blurTexture3, vUv) +
+						lerpBloomFactor(bloomFactors[3]) * vec4(bloomTintColors[3], 1.0) * texture2D(blurTexture4, vUv) +
+						lerpBloomFactor(bloomFactors[4]) * vec4(bloomTintColors[4], 1.0) * texture2D(blurTexture5, vUv) );
+				}`
+			} );
+
+		}
+
+	}
+
+	UnrealBloomPass.BlurDirectionX = new THREE.Vector2( 1.0, 0.0 );
+	UnrealBloomPass.BlurDirectionY = new THREE.Vector2( 0.0, 1.0 );
+
+	THREE.UnrealBloomPass = UnrealBloomPass;
+
+} )();
+
+</script>
+<script>
 // ---------- content: the full roster — user picks who's actually seated ----------
 const ALL_SEATS = [
   { name:"Heraclitus", quote:"Of course the thread never resolves into a tapestry. You cannot step into the same river twice, and you cannot finish pulling a thread that is, itself, the river.", note:"your endless pulling isn't a personality trait — it's just you finally noticing what was always true of everything" },
@@ -1998,14 +2990,16 @@ function labelTexture(text, color){
 
 function addFloor(scene, y){
   const floorGeo = new THREE.CircleGeometry(40, 64);
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a0d1a, roughness: 1, metalness: 0 });
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x0b0e1c, roughness: 0.55, metalness: 0.2 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.receiveShadow = true;
   floor.rotation.x = -Math.PI/2;
   floor.position.y = y;
   scene.add(floor);
 }
 
 let torchLights = [];
+let torchFlames = []; // [{ flame, halo }] — flickered each frame
 
 function addColumns(scene, floorY){
   const colCount = 10;
@@ -2013,6 +3007,7 @@ function addColumns(scene, floorY){
   const baseMat = new THREE.MeshStandardMaterial({ color: 0x232946, roughness: 0.9, metalness: 0.05 });
   const shaftMat = new THREE.MeshStandardMaterial({ color: 0x1a1f38, roughness: 0.85, metalness: 0.08 });
   torchLights = [];
+  torchFlames = [];
 
   for(let i=0;i<colCount;i++){
     const angle = (i/colCount) * Math.PI*2;
@@ -2035,12 +3030,19 @@ function addColumns(scene, floorY){
 
     // torch on every other column — a small emissive flame plus a flickering point light
     if(i % 2 === 0){
-      const flameMat = new THREE.MeshStandardMaterial({ color: 0xffb066, emissive: 0xff8a3d, emissiveIntensity: 1.4, roughness:0.4 });
-      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), flameMat);
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xffd08a }); // unlit, so it reads as a light source
+      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 12), flameMat);
+      flame.scale.set(1, 1.6, 1); // teardrop-ish
       flame.position.y = 0.16 + 2.2 + 0.32;
       column.add(flame);
 
-      const torch = new THREE.PointLight(0xff9a4d, 0.9, 4.5, 2);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff9a4d, transparent:true, opacity:0.85, blending: THREE.AdditiveBlending, depthWrite:false }));
+      halo.scale.set(0.9, 0.9, 1);
+      halo.position.y = flame.position.y;
+      column.add(halo);
+      torchFlames.push({ flame, halo });
+
+      const torch = new THREE.PointLight(0xff9a4d, 0.9, 6, 2);
       torch.position.y = 0.16 + 2.2 + 0.32;
       column.add(torch);
       torchLights.push(torch);
@@ -2107,7 +3109,7 @@ function marbleBumpTexture(){
 // any specific sculpture, just the universal pose: chin on fist, elbow on knee
 function addThinker(scene, tableTopY){
   const bumpTex = marbleBumpTexture();
-  const mat = new THREE.MeshStandardMaterial({ color: 0xe8e4d8, roughness: 0.5, metalness: 0.06, bumpMap: bumpTex, bumpScale: 0.01 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0xe8e4d8, roughness: 0.38, metalness: 0.06, bumpMap: bumpTex, bumpScale: 0.012 });
 
   const plinthH = 0.24;
   const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.58, plinthH, 28), new THREE.MeshStandardMaterial({ color: 0x1c2138, roughness: 0.85, metalness: 0.1 }));
@@ -2219,6 +3221,109 @@ function addStarfield(scene){
   starMat = mat;
 }
 
+// ---------- visual fidelity helpers ----------
+let composer = null, gradePass = null, bloomPass = null;
+let dust = null, focusLight = null, focusTargetObj = null;
+
+// soft round glow, reused for torch halos and dust motes
+let _glowTex = null;
+function glowTexture(){
+  if(_glowTex) return _glowTex;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(32,32,0, 32,32,32);
+  grd.addColorStop(0, 'rgba(255,255,255,1)');
+  grd.addColorStop(0.25, 'rgba(255,255,255,0.45)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0,0,64,64);
+  _glowTex = new THREE.CanvasTexture(c);
+  return _glowTex;
+}
+
+// a big inside-out sphere painted with a night-sky gradient; its horizon matches
+// the fog color so the floor dissolves into the dark instead of ending at an edge
+function addSkyDome(scene){
+  const mat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { horizon:{value:new THREE.Color(COLOR_INK)}, zenith:{value:new THREE.Color(0x05060d)}, glow:{value:new THREE.Color(0x1d2340)} },
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 horizon; uniform vec3 zenith; uniform vec3 glow; varying vec3 vP;' +
+      'void main(){ float h = clamp(vP.y, 0.0, 1.0);' +
+      ' vec3 c = mix(horizon, zenith, pow(h, 0.6));' +
+      ' c += glow * exp(-abs(vP.y) * 9.0) * 0.6;' + // faint band of light just above the horizon
+      ' gl_FragColor = vec4(c, 1.0); }'
+  });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(70, 32, 16), mat);
+  dome.renderOrder = -1;
+  scene.add(dome);
+}
+
+// builds a tiny dim "world" (dark sky, warm torch spots, a lamp overhead) and turns
+// it into a reflection map, so marble and polished surfaces reflect something real
+function buildEnvironment(renderer){
+  const env = new THREE.Scene();
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(20, 32, 16), new THREE.MeshBasicMaterial({ color: 0x05060c, side: THREE.BackSide }));
+  env.add(sky);
+  const warm = new THREE.MeshBasicMaterial({ color: 0x7a4422 });
+  for(let i=0;i<10;i+=2){
+    const a = (i/10) * Math.PI*2;
+    const spot = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 8), warm);
+    spot.position.set(Math.cos(a)*8, 1.6, Math.sin(a)*8);
+    env.add(spot);
+  }
+  const lampSpot = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 8), new THREE.MeshBasicMaterial({ color: 0x9a8466 }));
+  lampSpot.position.set(0, 9, 0);
+  env.add(lampSpot);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const tex = pmrem.fromScene(env, 0.04).texture;
+  pmrem.dispose();
+  return tex;
+}
+
+// slow-drifting dust motes hanging in the lamplight — cheap, but it's what makes air feel like air
+function addDust(scene){
+  const count = 260;
+  const pos = new Float32Array(count*3);
+  const seed = new Float32Array(count);
+  for(let i=0;i<count;i++){
+    const r = Math.sqrt(Math.random()) * 5.2, a = Math.random()*Math.PI*2;
+    pos[i*3] = Math.cos(a)*r; pos[i*3+1] = Math.random()*4.2; pos[i*3+2] = Math.sin(a)*r;
+    seed[i] = Math.random()*100;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ map: glowTexture(), color: 0xffd9a0, size: 0.06, transparent:true, opacity:0.55,
+    blending: THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true });
+  dust = new THREE.Points(geo, mat);
+  dust.userData.seed = seed;
+  scene.add(dust);
+}
+
+// final "film look" pass: filmic tone curve, slight warm/cool grade, vignette, fine grain
+const GradeShader = {
+  uniforms: { tDiffuse:{value:null}, time:{value:0}, exposure:{value:1.1} },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: [
+    'uniform sampler2D tDiffuse; uniform float time; uniform float exposure; varying vec2 vUv;',
+    // ACES filmic approximation (Narkowicz) — rolls off highlights like film instead of clipping
+    'vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }',
+    'float rand(vec2 co){ return fract(sin(dot(co, vec2(12.9898,78.233))) * 43758.5453); }',
+    'void main(){',
+    '  vec4 src = texture2D(tDiffuse, vUv);',
+    '  vec3 base = src.rgb * exposure;',
+    '  float l0 = dot(base, vec3(0.299,0.587,0.114));',
+    '  vec3 c = mix(base, aces(base), smoothstep(0.35, 1.0, l0));',                   // film roll-off on highlights only
+    '  c = pow(max(c, 0.0), vec3(1.12));',                                            // deeper blacks, more contrast
+    '  float l = dot(c, vec3(0.299,0.587,0.114));',
+    '  c = mix(c, c * vec3(1.1,1.0,0.86), smoothstep(0.3, 1.0, l) * 0.6);',          // warm highlights
+    '  float d = distance(vUv, vec2(0.5, 0.46));',
+    '  c *= mix(1.0, 0.72, smoothstep(0.32, 0.78, d));',                              // vignette
+    '  c += (rand(vUv * 913.0 + fract(time)) - 0.5) * 0.012;',                        // grain
+    '  gl_FragColor = vec4(c, src.a);',
+    '}'
+  ].join('\n')
+};
+
 function initScene(){
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(COLOR_INK, 9, 27);
@@ -2231,7 +3336,26 @@ function initScene(){
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(width, height);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   wrap.appendChild(renderer.domElement);
+
+  // effects chain. WebGL2 gets a multisampled buffer so edges stay smooth after post-processing
+  const pr = renderer.getPixelRatio();
+  const rt = renderer.capabilities.isWebGL2
+    ? new THREE.WebGLMultisampleRenderTarget(width*pr, height*pr, { format: THREE.RGBAFormat })
+    : undefined;
+  composer = new THREE.EffectComposer(renderer, rt);
+  composer.setPixelRatio(pr);
+  composer.setSize(width, height);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width/2, height/2), 0.6, 0.5, 0.8);
+  composer.addPass(bloomPass);
+  gradePass = new THREE.ShaderPass(GradeShader);
+  composer.addPass(gradePass);
+
+  scene.environment = buildEnvironment(renderer);
+  addSkyDome(scene);
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enabled = false; // enabled once the intro finishes, so it can't be interrupted mid-shot
@@ -2257,6 +3381,26 @@ function initScene(){
   scene.add(rim);
   window.__lampRef = lamp; // referenced by the full-table flourish
 
+  // key light: same warm lamp, but as a spotlight so it can cast soft shadows
+  const key = new THREE.SpotLight(0xffd9a0, 0.85, 22, 0.95, 0.75, 1);
+  key.position.set(0.6, 6.5, 0.8);
+  key.target.position.set(0, 0, 0);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.bias = -0.0004;
+  key.shadow.radius = 4;
+  key.shadow.camera.near = 2; key.shadow.camera.far = 16;
+  scene.add(key); scene.add(key.target);
+
+  // follow-spot: fades in on whoever is selected or currently speaking
+  focusLight = new THREE.SpotLight(0xffcf7a, 0, 12, 0.24, 0.85, 1);
+  focusLight.position.set(0, 5.5, 0);
+  focusTargetObj = new THREE.Object3D();
+  focusLight.target = focusTargetObj;
+  scene.add(focusLight); scene.add(focusTargetObj);
+
+  addDust(scene);
+
   // table
   const tableRadius = 4.5, tableThickness = 0.22;
   const floorY = -1.15;
@@ -2264,7 +3408,7 @@ function initScene(){
   addColumns(scene, floorY);
 
   const tableGeo = new THREE.CylinderGeometry(tableRadius, tableRadius, tableThickness, 72);
-  const tableMat = new THREE.MeshStandardMaterial({ color: COLOR_PANEL, roughness: 0.85, metalness: 0.1 });
+  const tableMat = new THREE.MeshStandardMaterial({ color: COLOR_PANEL, roughness: 0.45, metalness: 0.3 });
   const table = new THREE.Mesh(tableGeo, tableMat);
   scene.add(table);
 
@@ -2292,6 +3436,10 @@ function initScene(){
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
   rebuildSeats();
+
+  scene.traverse(o => {
+    if(o.isMesh && o.material && o.material.isMeshStandardMaterial){ o.castShadow = true; o.receiveShadow = true; }
+  });
 
   wireInteraction();
   window.addEventListener('resize', onResize);
@@ -2337,6 +3485,7 @@ function rebuildSeats(){
     });
     const pedestal = new THREE.Mesh(pedGeo, pedMat);
     pedestal.position.y = pedHeight/2;
+    pedestal.receiveShadow = true;
     group.add(pedestal);
 
     const ringGeo2 = new THREE.RingGeometry(pedRadius+0.01, pedRadius+0.05, 32);
@@ -2394,6 +3543,7 @@ function rebuildSeats(){
 
     seatObjects.push({ index:i, group, pedestal, ring: ring2, bodySprite, iconSprite, labelSprite, hitMesh, x, z, isOpen: !!s.open, isTribute: !!s.tribute });
   });
+  prefetchPortraits();
 
   // selection changed under us — bio/transcript state no longer lines up, reset cleanly
   currentIndex = null;
@@ -2458,6 +3608,7 @@ function onResize(){
   camera.aspect = width/height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
+  if(composer) composer.setSize(width, height);
 }
 
 let lastActivity = Date.now();
@@ -2513,8 +3664,121 @@ function animate(){
     starMat.opacity = 0.55 + Math.sin(t * 0.6) * 0.15 + Math.sin(t * 2.3) * 0.06;
   }
 
-  renderer.render(scene, camera);
+  torchFlames.forEach((f, i) => {
+    const flick = 1 + Math.sin(t * 9.0 + i * 3.7) * 0.08 + Math.sin(t * 23.0 + i) * 0.05 + flourishBoost * 0.4;
+    f.flame.scale.set(flick, 1.6 * flick, flick);
+    f.halo.scale.setScalar(0.9 * flick);
+  });
+
+  if(dust){
+    const p = dust.geometry.attributes.position, s = dust.userData.seed;
+    for(let i = 0; i < p.count; i++){
+      let y = p.getY(i) + 0.0018;
+      if(y > 4.2) y = 0;
+      p.setXYZ(i, p.getX(i) + Math.sin(t * 0.3 + s[i]) * 0.0012, y, p.getZ(i) + Math.cos(t * 0.27 + s[i]) * 0.0012);
+    }
+    p.needsUpdate = true;
+  }
+
+  // the follow-spot glides to the seat the camera is focusing on, and fades out when nobody is
+  if(focusLight){
+    const active = desiredTarget.lengthSq() > 0.0001;
+    focusTargetObj.position.lerp(new THREE.Vector3(desiredTarget.x / 0.32, tableTopY, desiredTarget.z / 0.32), 0.08);
+    focusLight.intensity += ((active ? 1.6 : 0) - focusLight.intensity) * 0.06;
+  }
+
+  if(gradePass) gradePass.uniforms.time.value = t;
+  if(composer) composer.render(); else renderer.render(scene, camera);
 }
+
+// ---------- cinematic cutaway ----------
+// Looks for portraits/<name>.mp4 first, then portraits/<name>.jpg.
+// No file = no cutaway for that philosopher; the table view just carries on as before.
+const portraitCache = {}; // name -> Promise of { type:'video'|'image', url } or null
+
+function portraitSlug(name){
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function probe(url, kind){
+  return new Promise(resolve => {
+    if(kind === 'video'){
+      const v = document.createElement('video');
+      v.muted = true; v.preload = 'metadata';
+      v.onloadedmetadata = () => resolve(true);
+      v.onerror = () => resolve(false);
+      v.src = url;
+    } else {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    }
+  });
+}
+
+function findPortrait(name){
+  if(!(name in portraitCache)){
+    const base = 'portraits/' + portraitSlug(name);
+    portraitCache[name] = probe(base + '.mp4', 'video')
+      .then(ok => ok ? { type:'video', url: base + '.mp4' }
+        : probe(base + '.jpg', 'image').then(ok2 => ok2 ? { type:'image', url: base + '.jpg' } : null));
+  }
+  return portraitCache[name];
+}
+
+// warm the cache for everyone currently seated, so the first cut isn't delayed
+function prefetchPortraits(){
+  seats.forEach(s => { if(!s.open && !s.tribute) findPortrait(s.name); });
+}
+
+let cutawayToken = 0;     // bumps on every show/hide, so a slow load can't show a stale face
+let cutawayMirror = null; // the transcript line being typed; copied into the subtitle each frame
+
+async function showCutaway(name, lineEl){
+  const token = ++cutawayToken;
+  const portrait = await findPortrait(name);
+  if(token !== cutawayToken) return;           // someone newer started speaking meanwhile
+  const cut = document.getElementById('cutaway');
+  if(!portrait){ hideCutaway(); return; }
+
+  // swap in the new face (restarts the push-in animation)
+  const old = cut.querySelector('.cut-media');
+  if(old) old.remove();
+  let media;
+  if(portrait.type === 'video'){
+    media = document.createElement('video');
+    media.src = portrait.url; media.muted = true; media.loop = true; media.playsInline = true; media.autoplay = true;
+    media.play().catch(() => {});
+  } else {
+    media = document.createElement('img');
+    media.src = portrait.url; media.alt = name;
+  }
+  media.className = 'cut-media';
+  cut.insertBefore(media, cut.firstChild);
+
+  document.getElementById('cutName').textContent = name;
+  document.getElementById('cutSub').textContent = '';
+  cutawayMirror = lineEl;
+  cut.classList.remove('show'); void cut.offsetWidth; // restart CSS animations
+  cut.classList.add('show');
+  mirrorSubtitle(token);
+}
+
+function mirrorSubtitle(token){
+  if(token !== cutawayToken || !cutawayMirror) return;
+  document.getElementById('cutSub').textContent = cutawayMirror.textContent;
+  requestAnimationFrame(() => mirrorSubtitle(token));
+}
+
+function hideCutaway(){
+  cutawayToken++;
+  cutawayMirror = null;
+  const cut = document.getElementById('cutaway');
+  if(cut) cut.classList.remove('show');
+}
+
+document.getElementById('cutaway').addEventListener('click', hideCutaway); // tap to peek back at the table
 
 // ---------- selection + picker + conversation ----------
 function selectSeat(i){
@@ -2763,7 +4027,8 @@ function exportLineCard(name, line){
 }
 
 function resetTranscriptPanel(){
-  renderGen++; // cancel any in-flight typing from a prior question — stale fetch results get discarded when they arrive
+  renderGen++;
+  hideCutaway(); // cancel any in-flight typing from a prior question — stale fetch results get discarded when they arrive
   if(window.speechSynthesis) window.speechSynthesis.cancel();
   fullTranscript = [];
   const btn = document.getElementById('askBtn');
@@ -2842,6 +4107,7 @@ async function appendTurnsTyped(turns, gen){
     const lineEl = document.createElement('p');
     lineEl.className = 't-line typing';
     lineEl.dataset.fullText = turn.line;
+    showCutaway(turn.name, lineEl);
 
     const shareBtn = document.createElement('button');
     shareBtn.type = 'button';
@@ -2856,7 +4122,7 @@ async function appendTurnsTyped(turns, gen){
     panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
 
     await sleep(500);
-    if(gen !== renderGen){ speakingBadge.style.display = 'none'; return; }
+    if(gen !== renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); return; }
     await typeLine(lineEl, turn.line, gen, 24);
     lineEl.classList.remove('typing');
     fullTranscript.push(turn);
@@ -2870,7 +4136,7 @@ async function appendTurnsTyped(turns, gen){
     await sleep(readPause);
   }
 
-  if(gen === renderGen) speakingBadge.style.display = 'none';
+  if(gen === renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); }
 }
 
 // one call to the model, capped at the platform's required max_tokens:1000.
@@ -2892,9 +4158,21 @@ async function askTableRound(question, priorTurns, activeNames){
 
   const prompt = `You are staging a live roundtable CONVERSATION between historical philosophers seated at a table, discussing a real question below. Draw on each thinker's actual documented philosophy, arguments, and characteristic rhetorical style as accurately as you can — this should sound like something they might genuinely have argued, grounded in their real recorded positions and the way they actually reasoned and spoke, not a generic gesture at their reputation. This is not isolated statements — it is a genuine back-and-forth: thinkers respond to the question AND to what others just said, agreeing, disagreeing, building on, or challenging each other by name where it's natural, the way real philosophical disagreement actually sounds — including real tension between incompatible worldviews where it exists. Persona notes for each seated thinker (a starting point, not a ceiling — draw on everything else you know about them too):\n${personaText}${priorText}\n\nWrite ${priorTurns.length ? 'about ' + turnTarget + ' more' : 'about ' + turnTarget} turns. Each turn is ONE thinker speaking (1–3 sentences, first person, in character, may reference another seated thinker by name). Respond ONLY with valid JSON — an array of objects with "name" and "line" keys, in speaking order, using only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no narration outside the JSON array.\n\nThe question: ${question}`;
 
-  const res = await fetch("/.netlify/functions/ask-table", {
+  const apiKey = getStoredApiKey();
+  if(!apiKey){
+    const err = new Error('No API key set');
+    err.code = 'NO_API_KEY';
+    throw err;
+  }
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 1000,
@@ -2902,10 +4180,39 @@ async function askTableRound(question, priorTurns, activeNames){
     })
   });
   const data = await res.json();
+  if(data.error){
+    const err = new Error(data.error.message || 'API error');
+    err.code = data.error.type || 'API_ERROR';
+    throw err;
+  }
   const textBlock = (data.content || []).find(b => b.type === 'text');
   let raw = textBlock ? textBlock.text : '';
   raw = raw.replace(/```json|```/g, '').trim();
   return JSON.parse(raw);
+}
+
+// --- visitor-supplied API key: stored only in this browser, sent only to Anthropic ---
+const API_KEY_STORAGE = 'symposium-anthropic-key';
+function getStoredApiKey(){
+  try { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+  catch(e){ return ''; }
+}
+function setStoredApiKey(key){
+  try { localStorage.setItem(API_KEY_STORAGE, key); } catch(e){ /* ignore */ }
+}
+function clearStoredApiKey(){
+  try { localStorage.removeItem(API_KEY_STORAGE); } catch(e){ /* ignore */ }
+}
+function refreshApiKeyStatus(){
+  const status = document.getElementById('apiKeyStatus');
+  const key = getStoredApiKey();
+  status.textContent = key ? `Saved (ending …${key.slice(-4)})` : 'No key saved yet';
+}
+function statusMessageFor(err){
+  if(err && err.code === 'NO_API_KEY') return 'Add your Anthropic API key (click "API Key" below) to ask the table';
+  if(err && err.code === 'authentication_error') return 'That API key was rejected — check it under "API Key" below';
+  if(err && err.code === 'invalid_request_error' && /credit|billing/i.test(err.message || '')) return 'Your Anthropic account needs billing set up — check console.anthropic.com';
+  return "Something broke on the table's end — try again";
 }
 
 // chains two rounds so each seated thinker gets real back-and-forth rather than
@@ -2966,7 +4273,7 @@ async function handleAskSubmit(){
     });
     await typeQueue;
   } catch(err){
-    if(myGen === renderGen) status.textContent = "Something broke on the table's end — try again";
+    if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
   } finally {
     btn.disabled = false; btn.textContent = 'Ask the table';
@@ -3022,6 +4329,7 @@ function finishConversationUI(){
 loadSessionCount();
 
 function stopConversation(){
+  hideCutaway();
   // there's no way to truly cancel the in-flight fetch here (AbortSignal can't
   // cross the artifact's postMessage-based fetch proxy), so this stops the UI
   // and discards whatever arrives late — the renderGen check below does that
@@ -3070,7 +4378,7 @@ document.getElementById('continueLink').addEventListener('click', async (e) => {
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
   } catch(err){
     if(myGen === renderGen){
-      status.textContent = "Something broke on the table's end — try again";
+      status.textContent = statusMessageFor(err);
     }
     console.error(err);
   } finally {
@@ -3119,7 +4427,7 @@ async function handleChimeIn(){
     await appendTurnsTyped(more, myGen);
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
   } catch(err){
-    if(myGen === renderGen) status.textContent = "Something broke on the table's end — try again";
+    if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
   } finally {
     document.getElementById('stopBtn').style.display = 'none';
@@ -3429,6 +4737,29 @@ document.getElementById('voiceToggle').addEventListener('click', (e) => {
   toggle.textContent = voiceOn ? 'Voice: on' : 'Voice: off';
   if(!voiceOn && window.speechSynthesis) window.speechSynthesis.cancel();
 });
+
+document.getElementById('apiKeyLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('historyPanel').classList.remove('show');
+  const panel = document.getElementById('apiKeyPanel');
+  panel.classList.toggle('show');
+  refreshApiKeyStatus();
+});
+document.getElementById('apiKeySave').addEventListener('click', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('apiKeyInput');
+  const key = input.value.trim();
+  if(!key) return;
+  setStoredApiKey(key);
+  input.value = '';
+  refreshApiKeyStatus();
+});
+document.getElementById('apiKeyClear').addEventListener('click', (e) => {
+  e.preventDefault();
+  clearStoredApiKey();
+  refreshApiKeyStatus();
+});
+refreshApiKeyStatus();
 
 document.getElementById('askBtn').addEventListener('click', handleAskSubmit);
 document.getElementById('questionInput').addEventListener('keydown', (e) => {
