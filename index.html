@@ -116,7 +116,6 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease !important;
   }
-  .stop-btn:hover{ border-color: var(--thread-dim) !important; color: var(--text) !important; }
   .ask-status{
     font-family:'Fraunces', serif;
     font-style: italic;
@@ -157,7 +156,6 @@
     text-decoration:none;
     margin-top:0.2rem;
   }
-  .reset-link:hover{ text-decoration:underline; }
 
   .suggested-prompts{
     display:flex;
@@ -179,7 +177,6 @@
     cursor:pointer;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   }
-  .suggested-chip:hover{ border-color: var(--thread-dim); color: var(--text); transform: translateY(-1px); }
 
   .post-actions{
     display:flex;
@@ -198,7 +195,6 @@
     margin-bottom: 0.6rem;
     transition: border-color 0.2s ease, background 0.2s ease;
   }
-  .history-entry:hover{ border-left-color: var(--thread); background: rgba(227,178,60,0.06); }
   .history-entry .h-q{
     font-family:'Fraunces', serif;
     font-style: italic;
@@ -393,12 +389,6 @@
     background: rgba(227,178,60,0.09);
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   }
-  .edit-table-link:hover{
-    background: rgba(227,178,60,0.18);
-    border-color: var(--thread);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(227,178,60,0.16);
-  }
   .edit-table-link .link-icon{
     width: 20px;
     height: 20px;
@@ -464,12 +454,6 @@
     background: rgba(227,178,60,0.09);
     transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
   }
-  .picker-action:hover{
-    background: rgba(227,178,60,0.18);
-    border-color: var(--thread);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(227,178,60,0.15);
-  }
 
   .picker-group{ margin-bottom: 1.15rem; }
   .picker-group:last-child{ margin-bottom: 0; }
@@ -487,7 +471,6 @@
     padding-bottom: 0.2rem;
     transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .picker-group-label:hover{ color: var(--thread); border-color: var(--thread-dim); }
 
   .picker-chips-grid{
     display:flex;
@@ -508,7 +491,6 @@
     cursor:pointer;
     transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease;
   }
-  .chip:hover{ border-color: var(--thread-dim); transform: translateY(-2px); }
   .chip.active{
     background: var(--thread);
     border-color: var(--thread);
@@ -570,7 +552,6 @@
     cursor:pointer;
     transition: border-color 0.3s ease, background 0.3s ease;
   }
-  .t-entry:hover{ background: rgba(227,178,60,0.06); }
   .t-to{ color: var(--text-dim); font-style: italic; }
   /* ---------- connect your AI ---------- */
   .connect-nudge{
@@ -598,7 +579,6 @@
     text-align:left; cursor:pointer; padding:0.6rem 0.7rem; border-radius:10px; background: var(--ink);
     border:1px solid var(--panel-line); color: var(--text); font-family:'Fraunces', serif; transition: border-color .15s ease, background .15s ease;
   }
-  .provider-btn:hover{ border-color: var(--thread-dim); }
   .provider-btn.on{ border-color: var(--thread); background: rgba(227,178,60,0.1); }
   .provider-btn .pb-name{ display:block; font-size:0.9rem; font-weight:500; }
   .provider-btn .pb-note{ display:block; font-style:italic; font-size:0.74rem; color: var(--text-dim); margin-top:0.15rem; }
@@ -626,7 +606,6 @@
     color: var(--text-dim); border:1px solid var(--panel-line);
     transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
-  .t-vote:hover{ color: var(--text); border-color: var(--thread-dim); }
   .t-vote.agree.on{ color: var(--ink-deep); background: var(--thread); border-color: var(--thread); }
   .t-vote.disagree.on{ color: #fff3ef; background: #a8554c; border-color: #a8554c; }
   .t-entry[data-vote="agree"]{ border-left-color: var(--thread); }
@@ -673,7 +652,6 @@
   }
   .t-face canvas{ width:26px; height:26px; }
   .t-face.has-portrait{ border-color: var(--thread); cursor:pointer; box-shadow: 0 0 0 3px rgba(227,178,60,0.08); }
-  .t-face.has-portrait:hover{ transform: scale(1.08); box-shadow: 0 0 0 4px rgba(227,178,60,0.18); }
   .t-face.you{ border-color: var(--text-dim); background: rgba(236,232,220,0.06); }
   .t-entry.highlight .t-face{ border-color: var(--thread); }
   .t-entry.highlight{
@@ -716,7 +694,6 @@
     opacity: 0.7;
     transition: color 0.15s ease, opacity 0.15s ease;
   }
-  .t-share:hover{ color: var(--thread); opacity: 1; }
 
   .chime-in-row{
     display: flex;
@@ -753,7 +730,6 @@
     white-space: nowrap;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .chime-in-row button:hover{ background: rgba(227,178,60,0.1); border-color: var(--thread); }
 
   .t-entry-user{
     border-left-color: var(--text) !important;
@@ -776,9 +752,7 @@
     color: var(--text-dim); border:1px solid var(--panel-line); background: transparent;
     transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
-  .convo-btn:hover{ color: var(--text); border-color: var(--thread-dim); }
   .convo-btn.primary{ color: var(--ink-deep); background: var(--thread); border-color: var(--thread); }
-  .convo-btn.primary:hover{ color: var(--ink-deep); filter: brightness(1.08); }
   .stage-bar{ width:100%; max-width:620px; display:flex; justify-content:flex-end; margin-top:0.9rem; }
   .toolbar{ display:flex; gap:0.4rem; padding:0.3rem; border-radius:999px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.6); }
   .tool-btn{
@@ -791,14 +765,39 @@
     -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
     transition: background .15s ease;
   }
-  .tool-btn:hover{ background: rgba(227,178,60,0.08); }
-  .tool-btn:hover::before, .tool-btn.on::before{ background: var(--thread); }
+  .tool-btn.on::before{ background: var(--thread); }
   .tool-btn.on{ border-color: var(--thread-dim); background: rgba(227,178,60,0.12); }
   #historyLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012a9%209%200%201%200%203-6.7%27/%3E%3Cpath%20d%3D%27M3%204v5h5%27/%3E%3Cpath%20d%3D%27M12%207v5l3%202%27/%3E%3C/svg%3E"); }
   #soundToggle{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%209v6h4l5%204V5L8%209z%27/%3E%3Cpath%20d%3D%27M16.5%208.5a5%205%200%200%201%200%207%27/%3E%3Cpath%20d%3D%27M19%206a8.5%208.5%200%200%201%200%2012%27/%3E%3C/svg%3E"); }
   #voiceToggle{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%279%27%20y%3D%273%27%20width%3D%276%27%20height%3D%2711%27%20rx%3D%273%27/%3E%3Cpath%20d%3D%27M5%2011a7%207%200%200%200%2014%200%27/%3E%3Cpath%20d%3D%27M12%2018v3%27/%3E%3C/svg%3E"); }
   #leaningsLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%203v18%27/%3E%3Cpath%20d%3D%27M7%2021h10%27/%3E%3Cpath%20d%3D%27M4%207h16%27/%3E%3Cpath%20d%3D%27M4%207l-3%207a3%203%200%200%200%206%200z%27/%3E%3Cpath%20d%3D%27M20%207l-3%207a3%203%200%200%200%206%200z%27/%3E%3C/svg%3E"); }
   #apiKeyLink{ --icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%278%27%20cy%3D%2715%27%20r%3D%274%27/%3E%3Cpath%20d%3D%27M11%2012l9-9%27/%3E%3Cpath%20d%3D%27M17%206l3%203%27/%3E%3Cpath%20d%3D%27M15%208l2%202%27/%3E%3C/svg%3E"); }
+
+  /* ---------- phones ---------- */
+  @media (max-width: 760px){
+    body{ padding: 1.6rem 0.7rem 3rem; }
+    h1{ font-size: 1.9rem; }
+    .subhead{ font-size: 0.95rem; }
+    #canvas-wrap{ touch-action: pan-y; }            /* vertical swipes scroll the page, sideways swipes turn the table */
+    .stage-hint{ font-size: 0.78rem; }
+    .stage-bar{ justify-content: center; }
+    .tool-btn{ width: 42px; height: 42px; }
+    .ask-form input, .ask-form button{ font-size: 1rem; padding: 0.8rem 1rem; }   /* 16px+ stops iPhone zooming in */
+    .chime-in-row input{ font-size: 1rem; }
+    .suggested-prompts{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.3rem; -webkit-overflow-scrolling: touch; }
+    .suggested-chip{ flex-shrink: 0; }
+    .convo-btn{ padding: 0.6rem 1rem; }
+    .t-vote{ padding: 0.4rem 0.85rem; font-size: 0.82rem; }
+    .t-face{ width: 38px; height: 38px; }
+    .transcript{ max-height: 70vh; padding: 1rem 1rem; }
+    .detail{ padding: 1.2rem 1.1rem; }
+    .provider-grid{ grid-template-columns: 1fr 1fr; }
+    .picker-panel{ padding: 1rem; }
+    .lean-name{ width: 5.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
 
   .layout{
     width: min(1180px, 96vw);
@@ -824,6 +823,47 @@
     .layout{ flex-direction:column; align-items:center; }
     .layout-left{ width:100%; align-items:center; }
     .layout-right{ width:100%; position:static; }
+  }
+
+
+  /* hover colors only on devices with a real mouse, so they don't stick after a tap on touchscreens */
+  @media (hover: hover) and (pointer: fine){
+    .stop-btn:hover{ border-color: var(--thread-dim) !important; color: var(--text) !important; }
+    .reset-link:hover{ text-decoration:underline; }
+    .suggested-chip:hover{ border-color: var(--thread-dim); color: var(--text); transform: translateY(-1px); }
+    .history-entry:hover{ border-left-color: var(--thread); background: rgba(227,178,60,0.06); }
+    .edit-table-link:hover{
+    background: rgba(227,178,60,0.18);
+    border-color: var(--thread);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(227,178,60,0.16);
+  }
+    .picker-action:hover{
+    background: rgba(227,178,60,0.18);
+    border-color: var(--thread);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(227,178,60,0.15);
+  }
+    .picker-group-label:hover{ color: var(--thread); border-color: var(--thread-dim); }
+    .chip:hover{ border-color: var(--thread-dim); transform: translateY(-2px); }
+    .t-entry:hover{ background: rgba(227,178,60,0.06); }
+    .provider-btn:hover{ border-color: var(--thread-dim); }
+    .t-vote:hover{ color: var(--text); border-color: var(--thread-dim); }
+    .t-face.has-portrait:hover{ transform: scale(1.08); box-shadow: 0 0 0 4px rgba(227,178,60,0.18); }
+    .t-share:hover{ color: var(--thread); opacity: 1; }
+    .chime-in-row button:hover{ background: rgba(227,178,60,0.1); border-color: var(--thread); }
+    .convo-btn:hover{ color: var(--text); border-color: var(--thread-dim); }
+    .convo-btn.primary:hover{ color: var(--ink-deep); filter: brightness(1.08); }
+    .tool-btn:hover{ background: rgba(227,178,60,0.08); }
+    .tool-btn:hover::before{ background: var(--thread); }
+  }
+  /* touchscreens: no gray tap box, and a short press-in effect instead of hover */
+  a, button{ -webkit-tap-highlight-color: transparent; }
+  @media (hover: none){
+    .tool-btn:active, .t-vote:active, .convo-btn:active, .suggested-chip:active, .provider-btn:active,
+    .chip:active, .picker-action:active, .edit-table-link:active, .chime-in-row button:active, .ask-form button:active{
+      transform: scale(0.95); filter: brightness(1.15);
+    }
   }
 </style>
 </head>
@@ -866,6 +906,7 @@
     <!-- conversation actions: only appear once there's a conversation -->
     <div class="convo-actions">
       <a href="#" id="continueLink" class="convo-btn primary" style="display:none;">Keep talking</a>
+      <a href="#" id="shareConvoLink" class="convo-btn primary" style="display:none;">Share conversation</a>
       <a href="#" id="copyLink" class="convo-btn" style="display:none;">Copy conversation</a>
       <a href="#" id="resetLink" class="convo-btn" style="display:none;">Back to their bios</a>
     </div>
@@ -7475,6 +7516,12 @@ function flutingTexture(){
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
 }
 
+// ---------- device flags ----------
+// LITE: phones and low-power devices get a lighter 3D scene (no shadows, lower resolution, fewer particles)
+const LITE = window.matchMedia('(max-width: 760px)').matches || ((navigator.hardwareConcurrency || 8) <= 4);
+// REDUCED_MOTION: honors the "reduce motion" accessibility setting (no camera drift or fly-in)
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ---------- visual fidelity helpers ----------
 let composer = null, gradePass = null, bloomPass = null;
 let dust = null, focusLight = null, focusTargetObj = null;
@@ -7536,7 +7583,8 @@ function buildEnvironment(renderer){
 
 // slow-drifting dust motes hanging in the lamplight — cheap, but it's what makes air feel like air
 function addDust(scene){
-  const count = 260;
+  if(REDUCED_MOTION) return;            // no drifting dust for reduced motion
+  const count = LITE ? 90 : 260;
   const pos = new Float32Array(count*3);
   const seed = new Float32Array(count);
   for(let i=0;i<count;i++){
@@ -7585,25 +7633,25 @@ function initScene(){
   const width = wrap.clientWidth, height = wrap.clientHeight;
   camera = new THREE.PerspectiveCamera(42, width/height, 0.1, 100);
   camera.position.copy(introFromPos); // cinematic opening — starts pulled back, settles into place
-  introStart = Date.now();
+  introStart = REDUCED_MOTION ? Date.now() - 10000 : Date.now();  // reduced motion: skip the fly-in
 
   renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, LITE ? 1.5 : 2));
   renderer.setSize(width, height);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = !LITE;   // soft shadows are the heaviest effect, so phones skip them
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   wrap.appendChild(renderer.domElement);
 
   // effects chain. WebGL2 gets a multisampled buffer so edges stay smooth after post-processing
   const pr = renderer.getPixelRatio();
-  const rt = renderer.capabilities.isWebGL2
+  const rt = (!LITE && renderer.capabilities.isWebGL2)
     ? new THREE.WebGLMultisampleRenderTarget(width*pr, height*pr, { format: THREE.RGBAFormat })
     : undefined;
   composer = new THREE.EffectComposer(renderer, rt);
   composer.setPixelRatio(pr);
   composer.setSize(width, height);
   composer.addPass(new THREE.RenderPass(scene, camera));
-  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width/2, height/2), 0.6, 0.5, 0.8);
+  bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(width/(LITE ? 4 : 2), height/(LITE ? 4 : 2)), 0.6, 0.5, 0.8);
   composer.addPass(bloomPass);
   gradePass = new THREE.ShaderPass(GradeShader);
   composer.addPass(gradePass);
@@ -7619,7 +7667,7 @@ function initScene(){
   controls.maxDistance = 16;
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = 1.35;
-  controls.autoRotate = true;
+  controls.autoRotate = !REDUCED_MOTION;
   controls.autoRotateSpeed = 0.5;
   controls.addEventListener('start', () => { controls.autoRotate = false; lastActivity = Date.now(); });
 
@@ -8243,7 +8291,7 @@ function animate(){
     controls.update();
 
     // resume the idle drift if nothing's happened in a while and no conversation is running
-    if(!controls.autoRotate && !inAnswerMode && Date.now() - lastActivity > 25000){
+    if(!REDUCED_MOTION && !controls.autoRotate && !inAnswerMode && Date.now() - lastActivity > 25000){
       controls.autoRotate = true;
     }
   }
@@ -8259,8 +8307,9 @@ function animate(){
   } else if(window.__lampRef && window.__lampRef.intensity !== 1.3){
     window.__lampRef.intensity = 1.3;
   }
+  thinkingBoost += ((thinkingOn ? 1 : 0) - thinkingBoost) * 0.04;   // torches flare while the table is thinking
   torchLights.forEach((light, i) => {
-    light.intensity = 0.85 + Math.sin(t * 3.1 + i * 7.3) * 0.18 + Math.sin(t * 11 + i * 2.1) * 0.09 + flourishBoost * 0.6;
+    light.intensity = thinkingBoost * (0.45 + Math.sin(t * 4.2 + i * 1.7) * 0.2) + 0.85 + Math.sin(t * 3.1 + i * 7.3) * 0.18 + Math.sin(t * 11 + i * 2.1) * 0.09 + flourishBoost * 0.6;
   });
   if(starMat){
     starMat.opacity = 0.55 + Math.sin(t * 0.6) * 0.15 + Math.sin(t * 2.3) * 0.06;
@@ -8415,7 +8464,7 @@ function drawThread(from, to){
 function updateThreads(){
   const now = performance.now();
   threadObjs.forEach(t => {
-    const p = Math.min(1, (now - t.born) / 1100);          // draws itself across the table in ~1s
+    const p = REDUCED_MOTION ? 1 : Math.min(1, (now - t.born) / 1100);          // draws itself across the table in ~1s
     const eased = 1 - Math.pow(1 - p, 3);
     t.mesh.geometry.setDrawRange(0, Math.floor(t.total * eased / 6) * 6);
     t.mesh.material.opacity += (t.target - t.mesh.material.opacity) * 0.08;
@@ -8428,6 +8477,47 @@ function updateThreads(){
 function clearThreads(){
   threadObjs.forEach(t => { scene.remove(t.mesh); if(t.spark) scene.remove(t.spark); t.mesh.geometry.dispose(); });
   threadObjs = [];
+}
+
+// ---------- filling the wait: the table reacts while the AI is thinking ----------
+const WAIT_LINES = {
+  "Socrates": "Socrates is sharpening a question…", "Diogenes": "Diogenes is muttering something rude…",
+  "Kant": "Kant is consulting his notes…", "Nietzsche": "Nietzsche is smoothing his mustache…",
+  "Lao Tzu": "Lao Tzu is waiting, unhurried…", "Camus": "Camus is lighting a cigarette…",
+  "Marx": "Marx is asking who owns the table…", "Descartes": "Descartes is doubting the question…",
+  "Heraclitus": "Heraclitus is watching the torchlight change…", "Alan Watts": "Alan Watts is chuckling at the question…",
+  "de Beauvoir": "de Beauvoir is weighing her words…", "Wittgenstein": "Wittgenstein is objecting to the wording…",
+  "Hume": "Hume is doubting anyone will answer…", "Epicurus": "Epicurus is pouring the wine…",
+  "Marcus Aurelius": "Marcus Aurelius is writing a note to himself…", "Plato": "Plato is looking past the shadows…",
+  "Aristotle": "Aristotle is sorting the question into categories…", "Confucius": "Confucius is straightening his robe…",
+  "Machiavelli": "Machiavelli is reading the room…", "Sartre": "Sartre is choosing, freely…",
+  "Kierkegaard": "Kierkegaard is working up to the leap…", "Spinoza": "Spinoza is polishing a lens…",
+  "Rumi": "Rumi is humming a verse…", "Buddha": "The Buddha is breathing slowly…",
+  "Pythagoras": "Pythagoras is counting something…", "Hobbes": "Hobbes is eyeing the exits…"
+};
+const WAIT_GENERIC = ["{n} is gathering their thoughts…", "{n} is leaning in…", "{n} is turning the question over…"];
+let thinkingOn = false, thinkingTimer = null, thinkingStart = null, thinkingBoost = 0, thinkingSpun = false;
+function startThinking(){
+  thinkingOn = true;
+  const names = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
+  const status = document.getElementById('askStatus');
+  let k = 0, last = '';
+  const tick = () => {
+    if(!thinkingOn || !names.length) return;
+    let n = names[Math.floor(Math.random() * names.length)];
+    if(n === last && names.length > 1) n = names[(names.indexOf(n) + 1) % names.length];
+    last = n;
+    status.textContent = WAIT_LINES[n] || WAIT_GENERIC[k++ % WAIT_GENERIC.length].replace('{n}', n);
+  };
+  clearInterval(thinkingTimer); clearTimeout(thinkingStart);
+  thinkingStart = setTimeout(() => { tick(); thinkingTimer = setInterval(tick, 2300); }, 1400);
+  if(!REDUCED_MOTION && controls && !controls.autoRotate){ controls.autoRotate = true; thinkingSpun = true; }
+}
+function stopThinking(){
+  if(!thinkingOn) return;
+  thinkingOn = false;
+  clearInterval(thinkingTimer); clearTimeout(thinkingStart); thinkingTimer = thinkingStart = null;
+  if(thinkingSpun && controls){ controls.autoRotate = false; thinkingSpun = false; }
 }
 
 // ---------- the verdict: a closing card summing up where the table landed ----------
@@ -8443,19 +8533,8 @@ async function askVerdict(question, turns){
   try { return extractJSON(await callModel(prompt, 900), '{', '}'); } catch(e){ console.error(e); return null; }
 }
 
-async function addVerdict(gen){
-  const panel = document.getElementById('transcript');
-  const spoken = fullTranscript.filter(t => t.name !== 'You');
-  if(spoken.length < 3 || !currentQuestion) return;
-  const old = panel.querySelector('.verdict'); if(old) old.remove();
-  const card = document.createElement('div');
-  card.className = 'verdict pending';
-  card.innerHTML = '<p class="v-title">The table’s verdict</p><p class="v-wait">Weighing what was said…</p>';
-  panel.appendChild(card);
-  followScroll(false);
-  let v = null;
-  try { v = await askVerdict(currentQuestion, fullTranscript); } catch(e){ console.error(e); }
-  if(gen !== renderGen || !v){ card.remove(); return; }
+let lastVerdict = null;   // kept so a shared link can include it
+function renderVerdictInto(card, v){
   card.classList.remove('pending');
   card.innerHTML = '';
   const add = (cls, label, text) => {
@@ -8474,6 +8553,23 @@ async function addVerdict(gen){
     const by = document.createElement('cite'); by.textContent = '— ' + (v.line.name || '');
     q.appendChild(by); card.appendChild(q);
   }
+}
+
+async function addVerdict(gen){
+  const panel = document.getElementById('transcript');
+  const spoken = fullTranscript.filter(t => t.name !== 'You');
+  if(spoken.length < 3 || !currentQuestion) return;
+  const old = panel.querySelector('.verdict'); if(old) old.remove();
+  const card = document.createElement('div');
+  card.className = 'verdict pending';
+  card.innerHTML = '<p class="v-title">The table’s verdict</p><p class="v-wait">Weighing what was said…</p>';
+  panel.appendChild(card);
+  followScroll(false);
+  let v = null;
+  try { v = await askVerdict(currentQuestion, fullTranscript); } catch(e){ console.error(e); }
+  if(gen !== renderGen || !v){ card.remove(); return; }
+  lastVerdict = v;
+  renderVerdictInto(card, v);
   followScroll(false);
 }
 
@@ -8574,6 +8670,67 @@ function renderLeanings(){
     r.addEventListener('click', ev => { ev.preventDefault(); saveLean({}); renderLeanings(); });
     panel.appendChild(r);
   }
+}
+
+// ---------- sharing: the whole conversation packed into a link (no server needed) ----------
+function b64url(bytes){
+  let s = ''; for(let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function fromB64url(str){
+  const s = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(s.length); for(let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i); return out;
+}
+async function packConversation(obj){
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  if('CompressionStream' in window){
+    const z = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    return 'z' + b64url(new Uint8Array(await new Response(z).arrayBuffer()));
+  }
+  return 'j' + b64url(bytes);
+}
+async function unpackConversation(s){
+  let bytes = fromB64url(s.slice(1));
+  if(s[0] === 'z'){
+    const z = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    bytes = new Uint8Array(await new Response(z).arrayBuffer());
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+async function shareConversation(){
+  if(!currentQuestion || !fullTranscript.length) return;
+  const btn = document.getElementById('shareConvoLink');
+  const data = { v: 1, q: currentQuestion, s: seats.filter(s => !s.open && !s.tribute).map(s => s.name),
+    t: fullTranscript.map(t => [t.name, t.to || '', t.line]), d: lastVerdict };
+  const url = location.origin + location.pathname + '#c=' + await packConversation(data);
+  const touch = window.matchMedia('(pointer: coarse)').matches;
+  if(touch && navigator.share){
+    try { await navigator.share({ title: 'The Symposium', text: 'The table on: “' + currentQuestion + '”', url }); return; } catch(e){ if(e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; }
+  catch(e){ history.replaceState(null, '', url); btn.textContent = 'Link is in the address bar'; }
+  setTimeout(() => { btn.textContent = 'Share conversation'; }, 2200);
+}
+// opening a shared link: seat the same table and replay the conversation, threads and verdict
+async function loadSharedFromHash(){
+  if(!location.hash.startsWith('#c=')) return;
+  let data;
+  try { data = await unpackConversation(location.hash.slice(3)); } catch(e){ console.error('bad share link', e); return; }
+  if(!data || !data.q || !Array.isArray(data.t)) return;
+  const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
+  if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
+  const turns = data.t.map(([name, to, line]) => ({ name, to: to || null, line }));
+  showStoredConversation({ question: data.q, turns });
+  inAnswerMode = true;
+  document.getElementById('askStatus').textContent = 'A shared conversation. Ask your own below, or tap a face to hear them up close.';
+  turns.forEach((t, k) => { if(t.to) setTimeout(() => drawThread(t.name, t.to), 600 + k * 260); });
+  if(data.d){
+    lastVerdict = data.d;
+    const card = document.createElement('div'); card.className = 'verdict';
+    document.getElementById('transcript').appendChild(card);
+    renderVerdictInto(card, data.d);
+  }
+  document.getElementById('shareConvoLink').style.display = 'inline-block';
 }
 
 // ---------- faces in the transcript ----------
@@ -8906,6 +9063,7 @@ function exportLineCard(name, line){
 function resetTranscriptPanel(){
   renderGen++;
   followTranscript = true; showJump(false);
+  { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
   clearThreads();
   hideCutaway(); // cancel any in-flight typing from a prior question — stale fetch results get discarded when they arrive
   if(window.speechSynthesis) window.speechSynthesis.cancel();
@@ -8925,7 +9083,10 @@ function resetTranscriptPanel(){
 
 function startNewTranscript(question){
   renderGen++;
+  lastVerdict = null;
+  if(location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);  // leaving a shared view
   followTranscript = true; showJump(false);
+  { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
   sessionLean = {};
   clearThreads();
   fullTranscript = [];
@@ -9030,7 +9191,7 @@ async function appendTurnsTyped(turns, gen){
 // when priorTurns is non-empty, the prior conversation is included as plain-text
 // context and the model is told to CONTINUE it — real replies to real lines,
 // not a fresh isolated round — which is what turns this into an actual dialogue.
-async function askTableRound(question, priorTurns, activeNames){
+async function askTableRound(question, priorTurns, activeNames, onTurn){
   const personaText = activeNames.map(n => `- ${n}: ${PERSONA[n]}`).join('\n');
   const turnTarget = Math.min(Math.max(activeNames.length, 4), 10);
 
@@ -9045,12 +9206,16 @@ async function askTableRound(question, priorTurns, activeNames){
 
   const prompt = `You are staging a live roundtable CONVERSATION between historical philosophers seated at a table, discussing a real question below. Draw on each thinker's actual documented philosophy, arguments, and characteristic rhetorical style as accurately as you can — this should sound like something they might genuinely have argued, grounded in their real recorded positions and the way they actually reasoned and spoke, not a generic gesture at their reputation. This is not isolated statements — it is a genuine back-and-forth: thinkers respond to the question AND to what others just said, agreeing, disagreeing, building on, or challenging each other by name where it's natural, the way real philosophical disagreement actually sounds — including real tension between incompatible worldviews where it exists. Persona notes for each seated thinker (a starting point, not a ceiling — draw on everything else you know about them too):\n${personaText}${priorText}\n\nWrite ${priorTurns.length ? 'about ' + turnTarget + ' more' : 'about ' + turnTarget} turns. Each turn is ONE thinker speaking (2–4 sentences, first person, in character, with a concrete argument, image or example rather than a slogan). Most turns should answer one specific person at the table. Respond ONLY with valid JSON — an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no narration outside the JSON array.\n\nThe question: ${question}`;
 
-  const raw = await callModel(prompt, 2400);
-  const turns = extractJSON(raw, '[', ']');
   const valid = new Set(activeNames.concat(['You']));
-  return turns
-    .filter(t => t && activeNames.includes(t.name) && typeof t.line === 'string')
-    .map(t => ({ name: t.name, line: t.line, to: (valid.has(t.to) && t.to !== t.name) ? t.to : null }));
+  const clean = t => (t && activeNames.includes(t.name) && typeof t.line === 'string')
+    ? { name: t.name, line: t.line, to: (valid.has(t.to) && t.to !== t.name) ? t.to : null } : null;
+  const out = [];
+  const parse = makeTurnStreamParser(obj => { const t = clean(obj); if(t){ out.push(t); if(onTurn) onTurn(t); } });
+  const raw = await callModel(prompt, 2400, onTurn ? parse : null);
+  if(out.length) return out;                       // streamed: turns were already handed out one by one
+  const turns = extractJSON(raw, '[', ']').map(clean).filter(Boolean);
+  if(onTurn) turns.forEach(t => onTurn(t));        // no stream support: hand them out now
+  return turns;
 }
 
 // ---------- which AI the table talks through ----------
@@ -9120,44 +9285,89 @@ function extractJSON(text, open, close){
 }
 
 // one function that sends a prompt to whichever AI is connected and returns its text reply
-async function callModel(prompt, maxTokens){
+// turn an error reply from any provider into one of a few plain error codes
+function errorFrom(status, data){
+  const msg = (data && (data.error && (data.error.message || data.error.status || data.error))) || ('HTTP ' + status);
+  const m = String(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  let code = 'API_ERROR';
+  if(status === 401 || status === 403 || /api key|unauthori[sz]ed|invalid.*key|authentication/i.test(m)) code = 'authentication_error';
+  else if(status === 402 || /credit|billing|quota|insufficient|balance/i.test(m)) code = 'billing';
+  else if(status === 429 || /rate.?limit|overloaded/i.test(m)) code = 'rate_limit';
+  else if(status === 404 || /model.*(not found|does not exist)|unknown model|invalid model/i.test(m)) code = 'model';
+  const err = aiError(code, m); err.status = status; return err;
+}
+async function aiFetch(url, init){
+  let res;
+  try { res = await fetch(url, init); }
+  catch(e){ throw aiError(e && e.name === 'AbortError' ? 'ABORTED' : 'NETWORK', e && e.message); }  // blocked (CORS), offline, or stopped
+  if(!res.ok){ let data = null; try { data = await res.json(); } catch(e){} throw errorFrom(res.status, data); }
+  return res;
+}
+// read a "server-sent events" stream: each `data:` line is one JSON event
+async function readSSE(res, onEvent){
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let buf = '';
+  for(;;){
+    let chunk;
+    try { chunk = await reader.read(); }
+    catch(e){ throw aiError(e && e.name === 'AbortError' ? 'ABORTED' : 'NETWORK', e && e.message); }
+    if(chunk.done) break;
+    buf += dec.decode(chunk.value, { stream: true });
+    let nl;
+    while((nl = buf.indexOf('\n')) >= 0){
+      const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+      if(!line.startsWith('data:')) continue;
+      const d = line.slice(5).trim();
+      if(d === '[DONE]') return;
+      let ev; try { ev = JSON.parse(d); } catch(e){ continue; }
+      onEvent(ev);                                   // may throw a provider error mid-stream
+    }
+  }
+}
+
+let currentAbort = null;   // the request in flight, so Stop can actually cancel it
+
+// send a prompt to whichever AI is connected and return its text. If onText is given, the reply
+// is streamed and onText(textSoFar) is called as it arrives; otherwise it waits for the whole reply.
+async function callModel(prompt, maxTokens, onText){
   const s = loadAI(), prov = s.provider, key = s.keys[prov] || '', model = currentModel(s);
   if(!key) throw aiError('NO_API_KEY');
   if(!model) throw aiError('NO_MODEL', 'Choose a model under Advanced');
-
-  const send = async (url, init) => {
-    let res;
-    try { res = await fetch(url, init); }
-    catch(e){ throw aiError('NETWORK', e.message); }          // blocked by the browser (CORS) or offline
-    let data = null; try { data = await res.json(); } catch(e){}
-    if(!res.ok || (data && data.error)){
-      const msg = (data && (data.error && (data.error.message || data.error.status || data.error))) || ('HTTP ' + res.status);
-      const m = String(typeof msg === 'string' ? msg : JSON.stringify(msg));
-      let code = 'API_ERROR';
-      if(res.status === 401 || res.status === 403 || /api key|unauthori[sz]ed|invalid.*key|authentication/i.test(m)) code = 'authentication_error';
-      else if(res.status === 402 || /credit|billing|quota|insufficient|balance/i.test(m)) code = 'billing';
-      else if(res.status === 429) code = 'rate_limit';
-      else if(res.status === 404 || /model.*(not found|does not exist)|unknown model|invalid model/i.test(m)) code = 'model';
-      const err = aiError(code, m); err.status = res.status; throw err;
-    }
-    return data;
-  };
+  const ctrl = new AbortController(); currentAbort = ctrl;
+  const stream = typeof onText === 'function' && typeof ReadableStream !== 'undefined';
+  let full = '';
+  const push = t => { if(!t) return; full += t; onText(full); };
 
   if(prov === 'anthropic'){
-    const data = await send('https://api.anthropic.com/v1/messages', { method: 'POST',
+    const res = await aiFetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }) });
+      body: JSON.stringify({ model, max_tokens: maxTokens, stream, messages: [{ role: 'user', content: prompt }] }) });
+    if(stream){
+      await readSSE(res, ev => {
+        if(ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') push(ev.delta.text);
+        else if(ev.type === 'error') throw errorFrom(0, ev);
+      });
+      return full;
+    }
+    const data = await res.json();
     return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
   }
+
   if(prov === 'gemini'){
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-    const data = await send(url, { method: 'POST',
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) +
+      (stream ? ':streamGenerateContent?alt=sse' : ':generateContent');
+    const res = await aiFetch(url, { method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: Math.max(8192, maxTokens * 3) } }) });  // room for "thinking" models
-    const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
-    return parts.filter(x => x.text && !x.thought).map(x => x.text).join('');
+    const textOf = d => ((((d.candidates || [])[0] || {}).content || {}).parts || []).filter(x => x.text && !x.thought).map(x => x.text).join('');
+    if(stream){
+      await readSSE(res, ev => { if(ev.error) throw errorFrom(0, ev); push(textOf(ev)); });
+      return full;
+    }
+    return textOf(await res.json());
   }
+
   // OpenAI, OpenRouter and other OpenAI-compatible services share one format
   const base = prov === 'openai' ? 'https://api.openai.com/v1'
              : prov === 'openrouter' ? 'https://openrouter.ai/api/v1'
@@ -9165,19 +9375,44 @@ async function callModel(prompt, maxTokens){
   if(!base) throw aiError('NO_BASE', 'Enter the service’s base URL');
   const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key };
   if(prov === 'openrouter'){ headers['HTTP-Referer'] = location.origin; headers['X-Title'] = 'The Symposium'; }
-  const body = { model, messages: [{ role: 'user', content: prompt }] };
+  const messages = [{ role: 'user', content: prompt }];
+  const body = { model, messages, stream };
   if(prov === 'openai'){ body.max_completion_tokens = Math.max(8000, maxTokens * 3); body.reasoning_effort = 'low'; }
   else body.max_tokens = maxTokens;
-  let data;
-  try { data = await send(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify(body) }); }
+  let res;
+  try { res = await aiFetch(base + '/chat/completions', { method: 'POST', signal: ctrl.signal, headers, body: JSON.stringify(body) }); }
   catch(e){
     // some models reject reasoning/limit settings: retry once with the plainest request
     if(e.code === 'API_ERROR' && /reasoning|max_completion_tokens|max_tokens|unsupported|parameter/i.test(e.message)){
-      data = await send(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify({ model, messages: body.messages }) });
+      res = await aiFetch(base + '/chat/completions', { method: 'POST', signal: ctrl.signal, headers, body: JSON.stringify({ model, messages, stream }) });
     } else throw e;
   }
+  if(stream){
+    await readSSE(res, ev => {
+      if(ev.error) throw errorFrom(0, ev);
+      const d = ((ev.choices || [])[0] || {}).delta || {};
+      push(typeof d.content === 'string' ? d.content : '');
+    });
+    return full;
+  }
+  const data = await res.json();
   const msg = ((data.choices || [])[0] || {}).message || {};
   return typeof msg.content === 'string' ? msg.content : (msg.content || []).map(c => c.text || '').join('');
+}
+
+// watches a reply stream and hands back each philosopher's turn the moment its {...} is complete
+function makeTurnStreamParser(onObject){
+  let pos = 0, depth = 0, inStr = false, esc = false, start = -1, started = false;
+  return full => {
+    for(; pos < full.length; pos++){
+      const c = full[pos];
+      if(!started){ if(c === '[') started = true; continue; }
+      if(inStr){ if(esc) esc = false; else if(c === '\\') esc = true; else if(c === '"') inStr = false; continue; }
+      if(c === '"'){ inStr = true; continue; }
+      if(c === '{'){ if(depth === 0) start = pos; depth++; }
+      else if(c === '}'){ depth--; if(depth === 0 && start >= 0){ try { onObject(JSON.parse(full.slice(start, pos + 1))); } catch(e){} start = -1; } }
+    }
+  };
 }
 
 function refreshApiKeyStatus(){
@@ -9222,6 +9457,7 @@ function renderSetup(){
   if(s.provider === 'custom') document.getElementById('setupAdv').open = true;
   refreshApiKeyStatus();
 }
+let pendingAsk = false;
 function openSetup(){
   ['historyPanel', 'leaningsPanel'].forEach(id => document.getElementById(id).classList.remove('show'));
   const panel = document.getElementById('apiKeyPanel');
@@ -9239,6 +9475,7 @@ function statusMessageFor(err){
   if(c === 'model') return `${P.name} doesn’t recognize the model “${currentModel()}”. Change it under Advanced`;
   if(c === 'NETWORK') return `Couldn’t reach ${P.name} from this page. It may block browser connections. Try OpenRouter instead`;
   if(c === 'NO_MODEL' || c === 'NO_BASE') return err.message;
+  if(c === 'ABORTED') return 'Stopped';
   if(c === 'BAD_REPLY' || err instanceof SyntaxError) return 'The AI answered in an unexpected format. Try again, or pick a stronger model';
   return "Something broke on the table's end. Try again";
 }
@@ -9250,11 +9487,9 @@ function statusMessageFor(err){
 async function askTable(question, onRound){
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
 
-  const round1 = await askTableRound(question, [], activeNames);
-  if(onRound) onRound(round1);
-
-  const round2 = await askTableRound(question, round1, activeNames);
-  if(onRound) onRound(round2);
+  const emit = t => { if(onRound) onRound([t]); };   // each turn is queued for the table as soon as it's written
+  const round1 = await askTableRound(question, [], activeNames, emit);
+  const round2 = await askTableRound(question, round1, activeNames, emit);
 
   return round1.concat(round2);
 }
@@ -9266,6 +9501,7 @@ async function handleAskSubmit(){
   if(!q) return;
   if(!getStoredApiKey()){
     document.getElementById('askStatus').textContent = 'Connect an AI first. It takes about two minutes.';
+    pendingAsk = true;   // once a key is connected, pick this question back up automatically
     openSetup();
     return;
   }
@@ -9294,13 +9530,13 @@ async function handleAskSubmit(){
   const myGen = startNewTranscript(q);
   let typeQueue = Promise.resolve();
   let roundCount = 0;
+  startThinking();
 
   try{
     await askTable(q, (newTurns) => {
       roundCount++;
-      status.textContent = roundCount < 2
-        ? "The first replies are in \u2014 more still coming\u2026"
-        : "Discussing: \u201c" + q + "\u201d";
+      stopThinking();
+      status.textContent = "Discussing: \u201c" + q + "\u201d";
       document.getElementById('resetLink').style.display = 'inline-block';
       typeQueue = typeQueue.then(() => appendTurnsTyped(newTurns, myGen));
     });
@@ -9313,6 +9549,7 @@ async function handleAskSubmit(){
     if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
   } finally {
+    stopThinking();
     btn.disabled = false; btn.textContent = 'Ask the table';
     stopBtn.style.display = 'none';
     if(fullTranscript.length) finishConversationUI();
@@ -9356,6 +9593,7 @@ async function incrementSessionCount(){
 }
 
 function finishConversationUI(){
+  document.getElementById('shareConvoLink').style.display = 'inline-block';
   document.getElementById('continueLink').style.display = 'inline-block';
   document.getElementById('copyLink').style.display = 'inline-block';
   document.getElementById('chimeInRow').style.display = 'flex';
@@ -9367,9 +9605,8 @@ loadSessionCount();
 
 function stopConversation(){
   hideCutaway();
-  // there's no way to truly cancel the in-flight fetch here (AbortSignal can't
-  // cross the artifact's postMessage-based fetch proxy), so this stops the UI
-  // and discards whatever arrives late — the renderGen check below does that
+  stopThinking();
+  if(currentAbort) currentAbort.abort();   // cancel the AI request in flight
   renderGen++;
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 
@@ -9390,9 +9627,12 @@ function stopConversation(){
   document.getElementById('stopBtn').style.display = 'none';
   document.getElementById('nowSpeaking').style.display = 'none';
   if(fullTranscript.length) finishConversationUI();
+  // stopped early: still sum up, as long as a few philosophers got a word in
+  if(fullTranscript.filter(t => t.name !== 'You').length >= 3) addVerdict(renderGen);
 }
 
 document.getElementById('stopBtn').addEventListener('click', stopConversation);
+document.getElementById('shareConvoLink').addEventListener('click', (e) => { e.preventDefault(); shareConversation(); });
 
 // ---------- keep talking: continue the same conversation without resetting the panel ----------
 document.getElementById('continueLink').addEventListener('click', async (e) => {
@@ -9409,9 +9649,11 @@ document.getElementById('continueLink').addEventListener('click', async (e) => {
   document.getElementById('stopBtn').style.display = 'inline-block';
 
   try{
-    const more = await askTableRound(currentQuestion, fullTranscript, activeNames);
+    startThinking();
+    let q2 = Promise.resolve();
+    await askTableRound(currentQuestion, fullTranscript.slice(), activeNames, t => { stopThinking(); q2 = q2.then(() => appendTurnsTyped([t], myGen)); });
     if(myGen !== renderGen) return; // a new question superseded this while we waited
-    await appendTurnsTyped(more, myGen);
+    await q2;
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
     if(myGen === renderGen) await addVerdict(myGen);
   } catch(err){
@@ -9420,6 +9662,7 @@ document.getElementById('continueLink').addEventListener('click', async (e) => {
     }
     console.error(err);
   } finally {
+    stopThinking();
     document.getElementById('stopBtn').style.display = 'none';
     if(myGen === renderGen) finishConversationUI();
   }
@@ -9460,15 +9703,18 @@ async function handleChimeIn(){
   status.textContent = "The table considers what you said\u2026";
 
   try{
-    const more = await askTableRound(currentQuestion, fullTranscript, activeNames);
+    startThinking();
+    let q2 = Promise.resolve();
+    await askTableRound(currentQuestion, fullTranscript.slice(), activeNames, t => { stopThinking(); q2 = q2.then(() => appendTurnsTyped([t], myGen)); });
     if(myGen !== renderGen) return;
-    await appendTurnsTyped(more, myGen);
+    await q2;
     status.textContent = "Discussing: \u201c" + currentQuestion + "\u201d";
     if(myGen === renderGen) await addVerdict(myGen);
   } catch(err){
     if(myGen === renderGen) status.textContent = statusMessageFor(err);
     console.error(err);
   } finally {
+    stopThinking();
     document.getElementById('stopBtn').style.display = 'none';
     if(myGen === renderGen) finishConversationUI();
   }
@@ -9815,6 +10061,14 @@ async function testConnection(){
     const reply = await callModel('Reply with exactly one word: ready', 400);
     if(!reply || !reply.trim()) throw aiError('BAD_REPLY');
     status.classList.add('ok'); status.textContent = '\u2713 Connected. ' + P.name + ' (' + currentModel() + ') is ready for the table.';
+    if(pendingAsk && document.getElementById('questionInput').value.trim()){
+      pendingAsk = false;
+      setTimeout(() => {
+        document.getElementById('apiKeyPanel').classList.remove('show');
+        document.getElementById('askForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        handleAskSubmit();
+      }, 900);
+    }
   } catch(err){
     status.classList.add('bad'); status.textContent = '\u2717 ' + statusMessageFor(err);
   }
@@ -9857,9 +10111,11 @@ document.getElementById('resetLink').addEventListener('click', (e) => {
 });
 
 if(document.fonts && document.fonts.ready){
-  document.fonts.ready.then(initScene).catch(initScene);
+  let booted = false;
+  const boot = () => { if(booted) return; booted = true; initScene(); loadSharedFromHash(); };
+  document.fonts.ready.then(boot).catch(boot);
 } else {
-  initScene();
+  initScene(); loadSharedFromHash();
 }
 
 </script>
