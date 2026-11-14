@@ -572,6 +572,51 @@
   }
   .t-entry:hover{ background: rgba(227,178,60,0.06); }
   .t-to{ color: var(--text-dim); font-style: italic; }
+  /* ---------- connect your AI ---------- */
+  .connect-nudge{
+    width:100%; max-width:620px; margin-top:0.8rem; padding:0.75rem 0.9rem; border-radius:12px;
+    display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;
+    border:1px solid var(--thread-dim); background: rgba(227,178,60,0.07);
+    font-family:'Fraunces', serif; font-style:italic; color: var(--text); font-size:0.9rem;
+  }
+  .connect-nudge span{ flex:1; min-width:14rem; }
+  .connect-nudge button, .provider-guide a.key-link{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:0.88rem; cursor:pointer;
+    color: var(--ink-deep); background: var(--thread); border:none; border-radius:999px; padding:0.45rem 1rem; text-decoration:none;
+  }
+  .setup-panel{ width:100%; max-width:620px; }
+  .setup-title{ font-family:'Fraunces', serif; font-weight:500; font-size:1.3rem; color: var(--text); margin:0 0 0.4rem; }
+  .setup-lead{ font-family:'Fraunces', serif; color: var(--text-dim); font-size:0.95rem; line-height:1.55; margin:0 0 0.8rem; }
+  .setup-panel details{ margin:0 0 0.9rem; border:1px solid var(--panel-line); border-radius:10px; padding:0.55rem 0.8rem; }
+  .setup-panel summary{ cursor:pointer; font-family:'Fraunces', serif; font-style:italic; color: var(--thread); font-size:0.92rem; }
+  .setup-panel details p{ font-family:'Fraunces', serif; font-size:0.9rem; line-height:1.55; color: var(--text); margin:0.6rem 0 0; }
+  .setup-panel details b{ color: var(--thread); font-weight:500; }
+  .setup-step{ font-family:'Fraunces', serif; font-weight:500; font-size:0.95rem; color: var(--text); margin:1rem 0 0.55rem; display:flex; align-items:center; gap:0.5rem; }
+  .setup-step span{ width:1.4rem; height:1.4rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.75rem; color: var(--ink-deep); background: var(--thread); }
+  .provider-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:0.5rem; }
+  .provider-btn{
+    text-align:left; cursor:pointer; padding:0.6rem 0.7rem; border-radius:10px; background: var(--ink);
+    border:1px solid var(--panel-line); color: var(--text); font-family:'Fraunces', serif; transition: border-color .15s ease, background .15s ease;
+  }
+  .provider-btn:hover{ border-color: var(--thread-dim); }
+  .provider-btn.on{ border-color: var(--thread); background: rgba(227,178,60,0.1); }
+  .provider-btn .pb-name{ display:block; font-size:0.9rem; font-weight:500; }
+  .provider-btn .pb-note{ display:block; font-style:italic; font-size:0.74rem; color: var(--text-dim); margin-top:0.15rem; }
+  .provider-btn .pb-tag{ display:inline-block; margin-top:0.3rem; font-size:0.68rem; font-style:normal; letter-spacing:0.04em; color: var(--ink-deep); background: var(--thread); border-radius:999px; padding:0.05rem 0.45rem; }
+  .provider-guide{ font-family:'Fraunces', serif; color: var(--text); font-size:0.9rem; line-height:1.55; }
+  .provider-guide ol{ margin:0 0 0.7rem; padding-left:1.2rem; }
+  .provider-guide li{ margin-bottom:0.3rem; }
+  .provider-guide .pg-note{ color: var(--text-dim); font-style:italic; font-size:0.85rem; margin:0 0 0.6rem; }
+  .custom-fields input, .setup-adv input{
+    width:100%; background: var(--panel); border:1px solid var(--panel-line); border-radius:10px; padding:0.6rem 0.9rem;
+    color: var(--text); font-family:'JetBrains Mono', monospace; font-size:0.82rem; outline:none; margin-bottom:0.6rem;
+  }
+  .setup-adv input{ margin:0.6rem 0 0; }
+  .setup-hint{ color: var(--text-dim) !important; font-style:italic; font-size:0.8rem !important; }
+  .setup-actions{ margin-top:0.8rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+  .setup-remove{ font-family:'Fraunces', serif; font-style:italic; font-size:0.8rem; color: var(--text-dim); }
+  .setup-status{ font-family:'Fraunces', serif; font-style:italic; font-size:0.86rem; color: var(--text-dim); }
+  .setup-status.ok{ color: #9fd39a; } .setup-status.bad{ color: #e39a90; }
   /* agree / disagree on each line */
   .t-actions{ display:flex; align-items:center; gap:0.45rem; margin-top:0.5rem; flex-wrap:wrap; }
   .t-actions .t-share{ display:inline; margin:0 0 0 0.4rem; }
@@ -811,6 +856,10 @@
       <input type="text" id="questionInput" placeholder="Enter Table Discussion Question" autocomplete="off" />
       <button type="button" id="askBtn">Ask the table</button>
     </div>
+    <div id="connectNudge" class="connect-nudge" style="display:none;">
+      <span>New here? Connect an AI to bring the table to life. It takes about two minutes.</span>
+      <button type="button" id="connectNudgeBtn">Connect your AI</button>
+    </div>
     <div id="suggestedPrompts" class="suggested-prompts"></div>
     <div class="ask-status" id="askStatus"></div>
     <div class="now-speaking" id="nowSpeaking" style="display:none;"></div>
@@ -827,26 +876,44 @@
         <a href="#" id="soundToggle" class="tool-btn" title="Ambient sound: off" aria-label="Ambient sound">Sound: off</a>
         <a href="#" id="voiceToggle" class="tool-btn" title="Read lines aloud: off" aria-label="Read lines aloud">Voice: off</a>
         <a href="#" id="leaningsLink" class="tool-btn" title="Your leanings" aria-label="Your leanings">Leanings</a>
-        <a href="#" id="apiKeyLink" class="tool-btn" title="Your API key" aria-label="Your API key">API Key</a>
+        <a href="#" id="apiKeyLink" class="tool-btn" title="Connect your AI" aria-label="Connect your AI">API Key</a>
       </div>
     </div>
 
     <div id="historyPanel" class="picker-panel"></div>
     <div id="leaningsPanel" class="picker-panel leanings-panel"></div>
 
-    <div id="apiKeyPanel" class="picker-panel">
-      <p style="margin:0 0 0.6rem; color:var(--text-dim); font-family:'Fraunces',serif; font-style:italic; font-size:0.95rem;">
-        This table runs on your own Anthropic API key so the table's asker (not the site owner) covers the cost.
-        Get one free at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:var(--thread);">console.anthropic.com</a>.
-        Your key is stored only in this browser (never sent anywhere but Anthropic) — clear it anytime below.
-      </p>
+    <div id="apiKeyPanel" class="picker-panel setup-panel">
+      <p class="setup-title">Connect your AI</p>
+      <p class="setup-lead">The Symposium doesn&rsquo;t have its own AI. You connect one you already use (or sign up for one), and the philosophers speak through it. Each visitor pays the AI company directly, usually a few cents per conversation, and there&rsquo;s no account to make here.</p>
+      <details class="setup-what">
+        <summary>What&rsquo;s an API key?</summary>
+        <p>An <b>API key</b> is a long password that lets an app use an AI service on your account. Think of it like handing this site a prepaid card that only works at one store: it can only buy AI answers, and you can cancel it anytime.</p>
+        <p><b>Your ChatGPT, Claude or Gemini subscription is not an API key.</b> Developer access is set up separately, on each company&rsquo;s developer site, and is usually pay-as-you-go.</p>
+        <p>Your key is saved only in this browser and sent only to the AI company you pick. It never goes to this site&rsquo;s owner. Remove it anytime below.</p>
+      </details>
+      <p class="setup-step"><span>1</span> Pick an AI</p>
+      <div class="provider-grid" id="providerGrid"></div>
+      <p class="setup-step"><span>2</span> Get a key</p>
+      <div class="provider-guide" id="providerGuide"></div>
+      <p class="setup-step"><span>3</span> Paste it here</p>
+      <div class="custom-fields" id="customFields" style="display:none;">
+        <input type="text" id="baseUrlInput" placeholder="Base URL, e.g. https://api.groq.com/openai/v1" autocomplete="off" />
+      </div>
       <div class="ask-form" style="margin-top:0;">
-        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+        <input type="password" id="apiKeyInput" placeholder="Paste your key" autocomplete="off" />
         <button type="button" id="apiKeySave">Save</button>
       </div>
-      <div style="margin-top:0.6rem; display:flex; gap:1rem; align-items:center;">
-        <a href="#" id="apiKeyClear" class="picker-action">Clear saved key</a>
-        <span id="apiKeyStatus" style="color:var(--text-dim); font-size:0.85rem;"></span>
+      <details class="setup-adv" id="setupAdv">
+        <summary>Advanced: choose a model</summary>
+        <input type="text" id="modelInput" list="modelSuggestions" autocomplete="off" />
+        <datalist id="modelSuggestions"></datalist>
+        <p class="setup-hint" id="modelHint"></p>
+      </details>
+      <div class="setup-actions">
+        <a href="#" id="apiKeyTest" class="picker-action">Test connection</a>
+        <a href="#" id="apiKeyClear" class="setup-remove">Remove key</a>
+        <span id="apiKeyStatus" class="setup-status"></span>
       </div>
     </div>
 
@@ -8373,15 +8440,7 @@ async function askVerdict(question, turns){
     `{"agreed": "one or two sentences on what most of them converged on (or that they found no common ground)",\n` +
     ` "split": "one or two sentences naming the sharpest disagreement and who was on each side",\n` +
     ` "line": {"name": "speaker", "text": "the single most memorable line, quoted exactly from the conversation"}}`;
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-    body: JSON.stringify({ model: SYMPOSIUM_MODEL, max_tokens: 700, messages: [{ role: "user", content: prompt }] })
-  });
-  const data = await res.json();
-  if(data.error) return null;
-  const tb = (data.content || []).find(b => b.type === 'text');
-  try { return JSON.parse((tb ? tb.text : '').replace(/```json|```/g, '').trim()); } catch(e){ return null; }
+  try { return extractJSON(await callModel(prompt, 900), '{', '}'); } catch(e){ console.error(e); return null; }
 }
 
 async function addVerdict(gen){
@@ -8966,9 +9025,7 @@ async function appendTurnsTyped(turns, gen){
   if(gen === renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); }
 }
 
-// which Claude model voices the table (change this one line to switch models)
-const SYMPOSIUM_MODEL = "claude-sonnet-5-5";
-
+// which AI and model voice the table is chosen by each visitor under "Connect your AI" (defaults live in PROVIDERS)
 // one call to the model per round.
 // when priorTurns is non-empty, the prior conversation is included as plain-text
 // context and the model is told to CONTINUE it — real replies to real lines,
@@ -8988,65 +9045,202 @@ async function askTableRound(question, priorTurns, activeNames){
 
   const prompt = `You are staging a live roundtable CONVERSATION between historical philosophers seated at a table, discussing a real question below. Draw on each thinker's actual documented philosophy, arguments, and characteristic rhetorical style as accurately as you can — this should sound like something they might genuinely have argued, grounded in their real recorded positions and the way they actually reasoned and spoke, not a generic gesture at their reputation. This is not isolated statements — it is a genuine back-and-forth: thinkers respond to the question AND to what others just said, agreeing, disagreeing, building on, or challenging each other by name where it's natural, the way real philosophical disagreement actually sounds — including real tension between incompatible worldviews where it exists. Persona notes for each seated thinker (a starting point, not a ceiling — draw on everything else you know about them too):\n${personaText}${priorText}\n\nWrite ${priorTurns.length ? 'about ' + turnTarget + ' more' : 'about ' + turnTarget} turns. Each turn is ONE thinker speaking (2–4 sentences, first person, in character, with a concrete argument, image or example rather than a slogan). Most turns should answer one specific person at the table. Respond ONLY with valid JSON — an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no narration outside the JSON array.\n\nThe question: ${question}`;
 
-  const apiKey = getStoredApiKey();
-  if(!apiKey){
-    const err = new Error('No API key set');
-    err.code = 'NO_API_KEY';
-    throw err;
-  }
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify({
-      model: SYMPOSIUM_MODEL,
-      max_tokens: 2400,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  const data = await res.json();
-  if(data.error){
-    const err = new Error(data.error.message || 'API error');
-    err.code = data.error.type || 'API_ERROR';
-    throw err;
-  }
-  const textBlock = (data.content || []).find(b => b.type === 'text');
-  let raw = textBlock ? textBlock.text : '';
-  raw = raw.replace(/```json|```/g, '').trim();
-  const turns = JSON.parse(raw);
+  const raw = await callModel(prompt, 2400);
+  const turns = extractJSON(raw, '[', ']');
   const valid = new Set(activeNames.concat(['You']));
   return turns
     .filter(t => t && activeNames.includes(t.name) && typeof t.line === 'string')
     .map(t => ({ name: t.name, line: t.line, to: (valid.has(t.to) && t.to !== t.name) ? t.to : null }));
 }
 
-// --- visitor-supplied API key: stored only in this browser, sent only to Anthropic ---
-const API_KEY_STORAGE = 'symposium-anthropic-key';
-function getStoredApiKey(){
-  try { return localStorage.getItem(API_KEY_STORAGE) || ''; }
-  catch(e){ return ''; }
+// ---------- which AI the table talks through ----------
+// Settings (provider, a key per provider, model choices) are saved only in this browser.
+const PROVIDERS = {
+  anthropic: { name: 'Claude', by: 'Anthropic', note: 'The model this table was built on', model: 'claude-sonnet-5-5',
+    suggestions: ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'],
+    keyUrl: 'https://console.anthropic.com/settings/keys', keyHint: 'starts with sk-ant-',
+    steps: ['Go to the <b>Anthropic Console</b> and sign up. This is separate from a claude.ai account.',
+            'Under <b>Billing</b>, add a small amount of credit (around $5 lasts a long time here).',
+            'Open <b>API Keys</b>, click <b>Create Key</b>, and copy it.'],
+    cost: 'Pay as you go: usually a few cents per conversation.' },
+  openai: { name: 'ChatGPT', by: 'OpenAI', note: 'Use OpenAI’s GPT models', model: 'gpt-5.6-terra',
+    suggestions: ['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna', 'gpt-5.5'],
+    keyUrl: 'https://platform.openai.com/api-keys', keyHint: 'starts with sk-',
+    steps: ['Go to the <b>OpenAI Platform</b> and sign in. This is separate from a ChatGPT subscription.',
+            'Under <b>Billing</b>, add a small amount of credit.',
+            'Open <b>API keys</b>, click <b>Create new secret key</b>, and copy it.'],
+    cost: 'Pay as you go. If OpenAI blocks the connection from your browser, use OpenRouter instead. It reaches the same GPT models.' },
+  gemini: { name: 'Gemini', by: 'Google', note: 'Easiest way to try it', tag: 'Free to try', model: 'gemini-flash-latest',
+    suggestions: ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.5-flash-lite'],
+    keyUrl: 'https://aistudio.google.com/apikey', keyHint: 'starts with AIza',
+    steps: ['Go to <b>Google AI Studio</b> and sign in with any Google account.',
+            'Click <b>Create API key</b> and copy it. No payment needed to start.'],
+    cost: 'Free tier with daily limits. On the free tier, Google may use what you send to improve its products. If Google blocks the connection from your browser, use OpenRouter instead.' },
+  openrouter: { name: 'OpenRouter', by: 'One key, any model', note: 'GPT, Claude, Gemini, Llama, DeepSeek, Grok…', tag: 'Works with all', model: 'openrouter/auto',
+    suggestions: ['openrouter/auto'],
+    keyUrl: 'https://openrouter.ai/settings/keys', keyHint: 'starts with sk-or-',
+    steps: ['Go to <b>OpenRouter</b> and sign up.',
+            'Add a few dollars of credit (some models there are free).',
+            'Open <b>Keys</b>, click <b>Create Key</b>, and copy it.'],
+    cost: 'One account reaches models from most AI companies. “openrouter/auto” picks a good model for you; to choose one, copy its name from openrouter.ai/models into Advanced below.' },
+  custom: { name: 'Other', by: 'OpenAI-compatible', note: 'Groq, Together, DeepSeek, xAI, Ollama…', model: '',
+    suggestions: [], keyUrl: '', keyHint: 'from that service',
+    steps: ['Use any service with an “OpenAI-compatible” API.',
+            'Enter its <b>base URL</b> (usually ends in <code>/v1</code>), then your key, then the <b>model name</b> under Advanced.'],
+    cost: 'The service has to allow connections from a web page. Most hosted ones do; a local Ollama needs OLLAMA_ORIGINS set.' }
+};
+const AI_SETTINGS_KEY = 'symposium-ai';
+function loadAI(){
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem(AI_SETTINGS_KEY) || '{}'); } catch(e){}
+  s.keys = s.keys || {}; s.models = s.models || {};
+  try { // carry over a key saved by the older, Claude-only version
+    const old = localStorage.getItem('symposium-anthropic-key');
+    if(old && !s.keys.anthropic){ s.keys.anthropic = old; s.provider = s.provider || 'anthropic'; }
+  } catch(e){}
+  if(!PROVIDERS[s.provider]) s.provider = s.keys.anthropic ? 'anthropic' : 'gemini';
+  return s;
 }
-function setStoredApiKey(key){
-  try { localStorage.setItem(API_KEY_STORAGE, key); } catch(e){ /* ignore */ }
-}
+function saveAI(s){ try { localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(s)); } catch(e){} }
+function currentModel(s){ s = s || loadAI(); return s.models[s.provider] || PROVIDERS[s.provider].model; }
+function getStoredApiKey(){ const s = loadAI(); return s.keys[s.provider] || ''; }
+function setStoredApiKey(key){ const s = loadAI(); s.keys[s.provider] = key; saveAI(s); }
 function clearStoredApiKey(){
-  try { localStorage.removeItem(API_KEY_STORAGE); } catch(e){ /* ignore */ }
+  const s = loadAI(); delete s.keys[s.provider]; saveAI(s);
+  if(s.provider === 'anthropic'){ try { localStorage.removeItem('symposium-anthropic-key'); } catch(e){} }
 }
+
+function aiError(code, message){ const e = new Error(message || code); e.code = code; return e; }
+// pull the JSON out of a reply, even if a model wrapped it in prose or code fences
+function extractJSON(text, open, close){
+  const t = (text || '').replace(/```json|```/g, '');
+  const a = t.indexOf(open), b = t.lastIndexOf(close);
+  if(a < 0 || b < a) throw aiError('BAD_REPLY', 'The AI did not return the expected format');
+  return JSON.parse(t.slice(a, b + 1));
+}
+
+// one function that sends a prompt to whichever AI is connected and returns its text reply
+async function callModel(prompt, maxTokens){
+  const s = loadAI(), prov = s.provider, key = s.keys[prov] || '', model = currentModel(s);
+  if(!key) throw aiError('NO_API_KEY');
+  if(!model) throw aiError('NO_MODEL', 'Choose a model under Advanced');
+
+  const send = async (url, init) => {
+    let res;
+    try { res = await fetch(url, init); }
+    catch(e){ throw aiError('NETWORK', e.message); }          // blocked by the browser (CORS) or offline
+    let data = null; try { data = await res.json(); } catch(e){}
+    if(!res.ok || (data && data.error)){
+      const msg = (data && (data.error && (data.error.message || data.error.status || data.error))) || ('HTTP ' + res.status);
+      const m = String(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      let code = 'API_ERROR';
+      if(res.status === 401 || res.status === 403 || /api key|unauthori[sz]ed|invalid.*key|authentication/i.test(m)) code = 'authentication_error';
+      else if(res.status === 402 || /credit|billing|quota|insufficient|balance/i.test(m)) code = 'billing';
+      else if(res.status === 429) code = 'rate_limit';
+      else if(res.status === 404 || /model.*(not found|does not exist)|unknown model|invalid model/i.test(m)) code = 'model';
+      const err = aiError(code, m); err.status = res.status; throw err;
+    }
+    return data;
+  };
+
+  if(prov === 'anthropic'){
+    const data = await send('https://api.anthropic.com/v1/messages', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }) });
+    return (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  }
+  if(prov === 'gemini'){
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+    const data = await send(url, { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: Math.max(8192, maxTokens * 3) } }) });  // room for "thinking" models
+    const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
+    return parts.filter(x => x.text && !x.thought).map(x => x.text).join('');
+  }
+  // OpenAI, OpenRouter and other OpenAI-compatible services share one format
+  const base = prov === 'openai' ? 'https://api.openai.com/v1'
+             : prov === 'openrouter' ? 'https://openrouter.ai/api/v1'
+             : (s.baseUrl || '').replace(/\/+$/, '');
+  if(!base) throw aiError('NO_BASE', 'Enter the service’s base URL');
+  const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key };
+  if(prov === 'openrouter'){ headers['HTTP-Referer'] = location.origin; headers['X-Title'] = 'The Symposium'; }
+  const body = { model, messages: [{ role: 'user', content: prompt }] };
+  if(prov === 'openai'){ body.max_completion_tokens = Math.max(8000, maxTokens * 3); body.reasoning_effort = 'low'; }
+  else body.max_tokens = maxTokens;
+  let data;
+  try { data = await send(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify(body) }); }
+  catch(e){
+    // some models reject reasoning/limit settings: retry once with the plainest request
+    if(e.code === 'API_ERROR' && /reasoning|max_completion_tokens|max_tokens|unsupported|parameter/i.test(e.message)){
+      data = await send(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify({ model, messages: body.messages }) });
+    } else throw e;
+  }
+  const msg = ((data.choices || [])[0] || {}).message || {};
+  return typeof msg.content === 'string' ? msg.content : (msg.content || []).map(c => c.text || '').join('');
+}
+
 function refreshApiKeyStatus(){
+  const s = loadAI(), P = PROVIDERS[s.provider], key = s.keys[s.provider];
   const status = document.getElementById('apiKeyStatus');
-  const key = getStoredApiKey();
-  status.textContent = key ? `Saved (ending …${key.slice(-4)})` : 'No key saved yet';
+  status.classList.remove('ok', 'bad');
+  status.textContent = key ? `${P.name} key saved (ending …${key.slice(-4)})` : `No ${P.name} key saved yet`;
+  document.getElementById('apiKeyClear').style.display = key ? '' : 'none';
+  const nudge = document.getElementById('connectNudge');
+  if(nudge) nudge.style.display = key ? 'none' : 'flex';
 }
+
+function renderSetup(){
+  const s = loadAI();
+  const grid = document.getElementById('providerGrid');
+  grid.innerHTML = '';
+  Object.entries(PROVIDERS).forEach(([id, P]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'provider-btn' + (id === s.provider ? ' on' : '');
+    b.innerHTML = '<span class="pb-name"></span><span class="pb-note"></span>' + (P.tag ? '<span class="pb-tag"></span>' : '');
+    b.querySelector('.pb-name').textContent = P.name + (P.by && id !== 'openrouter' && id !== 'custom' ? ' · ' + P.by : '');
+    b.querySelector('.pb-note').textContent = id === 'openrouter' || id === 'custom' ? P.by + ' — ' + P.note : P.note;
+    if(P.tag) b.querySelector('.pb-tag').textContent = P.tag;
+    b.addEventListener('click', () => { const t = loadAI(); t.provider = id; saveAI(t); renderSetup(); });
+    grid.appendChild(b);
+  });
+  const P = PROVIDERS[s.provider];
+  const guide = document.getElementById('providerGuide');
+  guide.innerHTML = '<ol>' + P.steps.map(x => '<li>' + x + '</li>').join('') + '</ol>' +
+    '<p class="pg-note"></p>' + (P.keyUrl ? '<a class="key-link" target="_blank" rel="noopener"></a>' : '');
+  guide.querySelector('.pg-note').textContent = P.cost;
+  if(P.keyUrl){ const a = guide.querySelector('.key-link'); a.href = P.keyUrl; a.textContent = 'Open ' + (s.provider === 'anthropic' ? 'Anthropic Console' : s.provider === 'openai' ? 'OpenAI Platform' : s.provider === 'gemini' ? 'Google AI Studio' : 'OpenRouter') + ' ↗'; }
+  document.getElementById('apiKeyInput').placeholder = 'Paste your ' + P.name + ' key (' + P.keyHint + ')';
+  document.getElementById('customFields').style.display = s.provider === 'custom' ? 'block' : 'none';
+  document.getElementById('baseUrlInput').value = s.baseUrl || '';
+  const mi = document.getElementById('modelInput');
+  mi.value = s.models[s.provider] || P.model; mi.placeholder = P.model || 'model name, e.g. llama-3.3-70b';
+  document.getElementById('modelSuggestions').innerHTML = P.suggestions.map(m => '<option value="' + m + '">').join('');
+  document.getElementById('modelHint').textContent = s.provider === 'custom'
+    ? 'Required: the exact model name your service uses.'
+    : 'Leave this as is unless you know which model you want. Default: ' + P.model + '.';
+  if(s.provider === 'custom') document.getElementById('setupAdv').open = true;
+  refreshApiKeyStatus();
+}
+function openSetup(){
+  ['historyPanel', 'leaningsPanel'].forEach(id => document.getElementById(id).classList.remove('show'));
+  const panel = document.getElementById('apiKeyPanel');
+  renderSetup(); panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function statusMessageFor(err){
-  if(err && err.code === 'NO_API_KEY') return 'Add your Anthropic API key (click "API Key" below) to ask the table';
-  if(err && err.code === 'authentication_error') return 'That API key was rejected — check it under "API Key" below';
-  if(err && err.code === 'invalid_request_error' && /credit|billing/i.test(err.message || '')) return 'Your Anthropic account needs billing set up — check console.anthropic.com';
-  return "Something broke on the table's end — try again";
+  const P = PROVIDERS[loadAI().provider];
+  const c = err && err.code;
+  if(c === 'NO_API_KEY') return 'Connect an AI first: click “Connect your AI” to set it up';
+  if(c === 'authentication_error') return `${P.name} rejected that key. Check it under “Connect your AI”`;
+  if(c === 'billing' || (c === 'invalid_request_error' && /credit|billing/i.test(err.message || ''))) return `Your ${P.name} account needs credit or billing set up`;
+  if(c === 'rate_limit') return `${P.name} says you’ve hit a usage limit. Wait a minute and try again`;
+  if(c === 'model') return `${P.name} doesn’t recognize the model “${currentModel()}”. Change it under Advanced`;
+  if(c === 'NETWORK') return `Couldn’t reach ${P.name} from this page. It may block browser connections. Try OpenRouter instead`;
+  if(c === 'NO_MODEL' || c === 'NO_BASE') return err.message;
+  if(c === 'BAD_REPLY' || err instanceof SyntaxError) return 'The AI answered in an unexpected format. Try again, or pick a stronger model';
+  return "Something broke on the table's end. Try again";
 }
 
 // chains two rounds so each seated thinker gets real back-and-forth rather than
@@ -9070,6 +9264,11 @@ async function handleAskSubmit(){
   const input = document.getElementById('questionInput');
   const q = input.value.trim();
   if(!q) return;
+  if(!getStoredApiKey()){
+    document.getElementById('askStatus').textContent = 'Connect an AI first. It takes about two minutes.';
+    openSetup();
+    return;
+  }
 
   const activeCount = seats.filter(s => !s.open && !s.tribute).length;
   const status = document.getElementById('askStatus');
@@ -9599,9 +9798,28 @@ document.getElementById('apiKeyLink').addEventListener('click', (e) => {
   e.preventDefault();
   document.getElementById('historyPanel').classList.remove('show');
   const panel = document.getElementById('apiKeyPanel');
-  panel.classList.toggle('show');
-  refreshApiKeyStatus();
+  if(panel.classList.contains('show')) panel.classList.remove('show'); else openSetup();
 });
+document.getElementById('connectNudgeBtn').addEventListener('click', openSetup);
+document.getElementById('modelInput').addEventListener('change', (e) => {
+  const s = loadAI(), v = e.target.value.trim();
+  if(v && v !== PROVIDERS[s.provider].model) s.models[s.provider] = v; else delete s.models[s.provider];
+  saveAI(s);
+});
+document.getElementById('baseUrlInput').addEventListener('change', (e) => { const s = loadAI(); s.baseUrl = e.target.value.trim(); saveAI(s); });
+async function testConnection(){
+  const status = document.getElementById('apiKeyStatus');
+  const P = PROVIDERS[loadAI().provider];
+  status.classList.remove('ok', 'bad'); status.textContent = 'Checking with ' + P.name + '\u2026';
+  try {
+    const reply = await callModel('Reply with exactly one word: ready', 400);
+    if(!reply || !reply.trim()) throw aiError('BAD_REPLY');
+    status.classList.add('ok'); status.textContent = '\u2713 Connected. ' + P.name + ' (' + currentModel() + ') is ready for the table.';
+  } catch(err){
+    status.classList.add('bad'); status.textContent = '\u2717 ' + statusMessageFor(err);
+  }
+}
+document.getElementById('apiKeyTest').addEventListener('click', (e) => { e.preventDefault(); testConnection(); });
 document.getElementById('apiKeySave').addEventListener('click', (e) => {
   e.preventDefault();
   const input = document.getElementById('apiKeyInput');
@@ -9610,12 +9828,14 @@ document.getElementById('apiKeySave').addEventListener('click', (e) => {
   setStoredApiKey(key);
   input.value = '';
   refreshApiKeyStatus();
+  testConnection();   // check it right away so a wrong key is caught now, not mid-conversation
 });
 document.getElementById('apiKeyClear').addEventListener('click', (e) => {
   e.preventDefault();
   clearStoredApiKey();
   refreshApiKeyStatus();
 });
+renderSetup();
 refreshApiKeyStatus();
 
 document.getElementById('askBtn').addEventListener('click', handleAskSubmit);
