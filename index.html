@@ -899,6 +899,9 @@
     }
   }
 </style>
+<!-- Usage stats for the site owner (Umami). Cookie-free; nothing visible to visitors.
+     data-exclude-hash: shared conversation links live after the #, so they are never sent. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
 </head>
 <body>
 
@@ -8918,6 +8921,7 @@ function renderVerdictInto(card, v, n){
 }
 // "Take it up": point the chime-in box at the open question
 function takeUpQuestion(q){
+  track('take-it-up');
   const row = document.getElementById('chimeInRow'), input = document.getElementById('chimeInInput');
   if(!row || !input) return;
   takingUp = q;
@@ -8947,6 +8951,7 @@ async function addVerdict(gen){
   try { v = await askVerdict(currentQuestion, fullTranscript, lastVerdict); } catch(e){ console.error(e); }
   if(gen !== renderGen || !v){ card.remove(); return; }
   verdicts.push({ at, v }); lastVerdict = v;
+  track('checkpoint-reached', { number: verdicts.length });
   renderVerdictInto(card, v, verdicts.length);
   markLatestVerdict();
   followScroll(false);
@@ -8965,6 +8970,7 @@ function bumpLean(store, name, kind, d){
 function castVote(entry, name, kind){
   const prev = entry.dataset.vote || '';
   const next = prev === kind ? '' : kind;          // clicking the same side again undoes it
+  if(next) track('vote', { kind: next, name });
   const all = loadLean();
   if(prev){ bumpLean(all, name, prev, -1); bumpLean(sessionLean, name, prev, -1); }
   if(next){ bumpLean(all, name, next, 1);  bumpLean(sessionLean, name, next, 1); }
@@ -9078,6 +9084,7 @@ async function unpackConversation(s){
 }
 async function shareConversation(){
   if(!currentQuestion || !fullTranscript.length) return;
+  track('share-clicked');
   const btn = document.getElementById('shareConvoLink');
   const data = { v: 1, q: currentQuestion, s: seats.filter(s => !s.open && !s.tribute).map(s => s.name),
     t: fullTranscript.map(t => [t.name, t.to || '', t.line, t.re || '']), d: lastVerdict, ds: verdicts.map(x => [x.at, x.v]) };
@@ -9096,6 +9103,7 @@ async function loadSharedFromHash(){
   let data;
   try { data = await unpackConversation(location.hash.slice(3)); } catch(e){ console.error('bad share link', e); return; }
   if(!data || !data.q || !Array.isArray(data.t)) return;
+  track('shared-link-opened');
   const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
   if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
   const turns = data.t.map(([name, to, line, re]) => re ? ({ name, to: to || null, line, re }) : ({ name, to: to || null, line }));
@@ -9122,6 +9130,7 @@ async function loadSharedFromHash(){
 let biosOpen = false, currentSpeaker = null;
 function showTab(which){
   biosOpen = which === 'bios';
+  if(biosOpen) track('bios-opened', { during: renderGen > 0 && inAnswerMode ? 'conversation' : 'idle' });
   document.getElementById('tabConvo').classList.toggle('on', !biosOpen);
   document.getElementById('tabBios').classList.toggle('on', biosOpen);
   document.getElementById('transcript').style.display = biosOpen ? 'none' : 'block';
@@ -9797,6 +9806,28 @@ function extractJSON(text, open, close){
   return JSON.parse(t.slice(a, b + 1));
 }
 
+// ---------- usage stats (Umami) ----------
+// track('name', {details}) counts one event on the owner's Umami dashboard.
+// Never sends question text, conversation lines or API keys: only counts and labels.
+// It quietly does nothing if the stats script is blocked or hasn't loaded yet.
+function track(name, data){
+  try { if(window.umami && typeof window.umami.track === 'function') window.umami.track(name, data); } catch(e){}
+}
+// Owner switch: open the site once with ?notrack to stop counting this browser, ?track to resume.
+(function(){
+  try {
+    const q = new URLSearchParams(location.search);
+    if(q.has('notrack')) localStorage.setItem('umami.disabled', '1');
+    if(q.has('track')) localStorage.removeItem('umami.disabled');
+    if(q.has('notrack') || q.has('track')){
+      const on = !localStorage.getItem('umami.disabled');
+      history.replaceState(null, '', location.pathname + location.hash);
+      setTimeout(() => { const st = document.getElementById('askStatus');
+        if(st) st.textContent = on ? 'Usage stats: this browser is counted again.' : 'Usage stats: this browser is no longer counted.'; }, 1500);
+    }
+  } catch(e){}
+})();
+
 // one function that sends a prompt to whichever AI is connected and returns its text reply
 // turn an error reply from any provider into one of a few plain error codes
 function errorFrom(status, data){
@@ -9811,9 +9842,10 @@ function errorFrom(status, data){
 }
 async function aiFetch(url, init){
   let res;
+  const fail = err => { if(err.code !== 'ABORTED') track('ai-error', { provider: loadAI().provider, model: currentModel(), error: err.code, status: err.status || 0 }); return err; };
   try { res = await fetch(url, init); }
-  catch(e){ throw aiError(e && e.name === 'AbortError' ? 'ABORTED' : 'NETWORK', e && e.message); }  // blocked (CORS), offline, or stopped
-  if(!res.ok){ let data = null; try { data = await res.json(); } catch(e){} throw errorFrom(res.status, data); }
+  catch(e){ throw fail(aiError(e && e.name === 'AbortError' ? 'ABORTED' : 'NETWORK', e && e.message)); }  // blocked (CORS), offline, or stopped
+  if(!res.ok){ let data = null; try { data = await res.json(); } catch(e){} throw fail(errorFrom(res.status, data)); }
   return res;
 }
 // read a "server-sent events" stream: each `data:` line is one JSON event
@@ -9972,6 +10004,7 @@ function renderSetup(){
 }
 let pendingAsk = false;
 function openSetup(){
+  track('setup-opened', { hasKey: !!getStoredApiKey() });
   ['historyPanel', 'leaningsPanel'].forEach(id => document.getElementById(id).classList.remove('show'));
   const panel = document.getElementById('apiKeyPanel');
   renderSetup(); panel.classList.add('show');
@@ -10039,6 +10072,9 @@ async function handleAskSubmit(){
   }
   currentQuestion = q;
   inAnswerMode = true;
+  { const seated = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
+    track('question-asked', { seated: seated.length, provider: loadAI().provider, model: currentModel() });
+    seated.forEach(n => track('philosopher-seated', { name: n })); }
 
   if(biosOpen) showTab('convo');
   const myGen = startNewTranscript(q);
@@ -10118,6 +10154,7 @@ function finishConversationUI(){
 loadSessionCount();
 
 function stopConversation(){
+  track('stopped-early', { lines: fullTranscript.length });
   hideCutaway();
   stopThinking();
   if(currentAbort) currentAbort.abort();   // cancel the AI request in flight
@@ -10152,6 +10189,7 @@ document.getElementById('shareConvoLink').addEventListener('click', (e) => { e.p
 document.getElementById('continueLink').addEventListener('click', async (e) => {
   e.preventDefault();
   if(!currentQuestion || !fullTranscript.length) return;
+  track('keep-talking');
 
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
   const status = document.getElementById('askStatus');
@@ -10187,6 +10225,7 @@ async function handleChimeIn(){
   const input = document.getElementById('chimeInInput');
   const text = input.value.trim();
   if(!text || !currentQuestion || !fullTranscript.length) return;
+  track('chime-in', { answeringOpenQuestion: !!takingUp });
 
   const myGen = renderGen;
   const userTurn = { name: 'You', line: text };
@@ -10577,6 +10616,7 @@ async function testConnection(){
   try {
     const reply = await callModel('Reply with exactly one word: ready', 400);
     if(!reply || !reply.trim()) throw aiError('BAD_REPLY');
+    track('ai-connected', { provider: loadAI().provider, model: currentModel() });
     status.classList.add('ok'); status.textContent = '\u2713 Connected. ' + P.name + ' (' + currentModel() + ') is ready for the table.';
     if(pendingAsk && document.getElementById('questionInput').value.trim()){
       pendingAsk = false;
