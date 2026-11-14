@@ -556,6 +556,21 @@
     transition: border-color 0.3s ease, background 0.3s ease;
   }
   .t-entry:hover{ background: rgba(227,178,60,0.06); }
+  .t-entry.with-face{ display:flex; align-items:flex-start; gap:0.85rem; }
+  .t-body{ flex:1; min-width:0; }
+  .t-face{
+    flex-shrink:0; width:46px; height:46px; border-radius:50%; margin-top:0.15rem;
+    display:flex; align-items:center; justify-content:center;
+    background-color: var(--ink); border: 1.5px solid var(--thread-dim);
+    background-size: 210%; background-position: 47% 32%; background-repeat:no-repeat;
+    font-family:'Fraunces', serif; font-style:italic; font-size:0.72rem; color: var(--text);
+    transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .t-face canvas{ width:26px; height:26px; }
+  .t-face.has-portrait{ border-color: var(--thread); cursor:pointer; box-shadow: 0 0 0 3px rgba(227,178,60,0.08); }
+  .t-face.has-portrait:hover{ transform: scale(1.08); box-shadow: 0 0 0 4px rgba(227,178,60,0.18); }
+  .t-face.you{ border-color: var(--text-dim); background: rgba(236,232,220,0.06); }
+  .t-entry.highlight .t-face{ border-color: var(--thread); }
   .t-entry.highlight{
     border-left-color: var(--thread);
     background: rgba(227,178,60,0.09);
@@ -7954,6 +7969,41 @@ function hideCutaway(){
 
 document.getElementById('cutaway').addEventListener('click', hideCutaway); // tap to peek back at the table
 
+// ---------- faces in the transcript ----------
+// Wraps a transcript entry as [face] [name + line + share], using portraits/<name>.jpg when it
+// exists, otherwise the philosopher's symbol; "You" gets a simple badge.
+// Clicking a face opens that philosopher's full close-up with their line.
+function decorateEntry(entry){
+  const name = entry.dataset.name;
+  const body = document.createElement('div');
+  body.className = 't-body';
+  while(entry.firstChild) body.appendChild(entry.firstChild);
+  const face = document.createElement('div');
+  face.className = 't-face';
+  if(name === 'You'){
+    face.classList.add('you'); face.textContent = 'You';
+  } else {
+    const seat = ALL_SEATS.find(s => s.name === name);
+    face.appendChild(buildChipIcon(name, !!(seat && seat.tribute), false)); // symbol until a portrait loads
+    findPortrait(name).then(p => {
+      if(!p) return;
+      const url = p.type === 'image' ? p.url : p.url.replace(/\.mp4$/, '.jpg');
+      face.innerHTML = '';
+      face.style.backgroundImage = 'url("' + url + '")';
+      face.classList.add('has-portrait');
+      face.title = 'See ' + name + ' up close';
+      face.addEventListener('click', ev => {
+        ev.stopPropagation();
+        const line = body.querySelector('.t-line');
+        showCutaway(name, line);
+      });
+    });
+  }
+  entry.classList.add('with-face');
+  entry.appendChild(face);
+  entry.appendChild(body);
+}
+
 // ---------- selection + picker + conversation ----------
 function selectSeat(i){
   lastActivity = Date.now();
@@ -8288,7 +8338,6 @@ async function appendTurnsTyped(turns, gen){
     const lineEl = document.createElement('p');
     lineEl.className = 't-line typing';
     lineEl.dataset.fullText = turn.line;
-    showCutaway(turn.name, lineEl);
 
     const shareBtn = document.createElement('button');
     shareBtn.type = 'button';
@@ -8299,7 +8348,7 @@ async function appendTurnsTyped(turns, gen){
     entry.appendChild(nameEl);
     entry.appendChild(lineEl);
     entry.appendChild(shareBtn);
-    panel.appendChild(entry);
+    decorateEntry(entry); panel.appendChild(entry);
     panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
 
     await sleep(500);
@@ -8592,7 +8641,7 @@ async function handleChimeIn(){
   lineEl.textContent = text;
   entry.appendChild(nameEl);
   entry.appendChild(lineEl);
-  panel.appendChild(entry);
+  decorateEntry(entry); panel.appendChild(entry);
   panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
 
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
@@ -8721,7 +8770,7 @@ function showStoredConversation(data){
       shareBtn.addEventListener('click', (ev) => { ev.stopPropagation(); exportLineCard(turn.name, turn.line); });
       entry.appendChild(shareBtn);
     }
-    panel.appendChild(entry);
+    decorateEntry(entry); panel.appendChild(entry);
   });
 
   document.getElementById('detail').classList.remove('show');
