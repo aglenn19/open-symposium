@@ -320,6 +320,12 @@
   }
   .detail.show{ opacity:1; transform: translateY(0); }
 
+  .detail .detail-name{ font-size:1.4rem; margin:0 0 0.5rem; }
+  .detail-era{ font-family:'Space Grotesk', sans-serif; font-size:0.78rem; letter-spacing:0.04em; color: var(--text-dim); margin: -0.35rem 0 0.8rem; }
+  .detail-bio{ font-family:'Fraunces', serif; font-size:1.02rem; line-height:1.6; color: var(--text); margin:0 0 1rem; }
+  .detail-facts p{ margin:0 0 0.6rem; font-size:0.92rem; line-height:1.5; color: var(--text); display:flex; flex-direction:column; gap:0.15rem;
+    border-left: 2px solid var(--thread-dim); padding-left: 0.8rem; }
+  .detail-facts .fact-label{ font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--thread); }
   .detail-name{
     font-family:'Fraunces', serif;
     font-style: italic;
@@ -858,6 +864,12 @@
 
     <div class="detail" id="detail">
       <p class="detail-name" id="detailName"></p>
+      <p class="detail-era" id="detailEra" style="display:none;"></p>
+      <p class="detail-bio" id="detailBio" style="display:none;"></p>
+      <div class="detail-facts" id="detailFacts" style="display:none;">
+        <p><span class="fact-label">Big idea</span><span id="detailIdea"></span></p>
+        <p><span class="fact-label">Best known for</span><span id="detailWork"></span></p>
+      </div>
       <blockquote id="detailQuote" style="display:none;"></blockquote>
       <p class="note" id="detailNote" style="display:none;"></p>
       <p class="empty-note" id="detailEmpty" style="display:none;"></p>
@@ -6536,6 +6548,280 @@ const ALL_SEATS = [
   { name:"Machiavelli", quote:"You want to know if it is better to be loved or feared. I am telling you the question itself is the luxury of someone who has never had to actually hold power for more than an afternoon.", note:"The Prince — feared is safer than loved, since love can be withdrawn the moment it's inconvenient, but fear you can still command" }
 ];
 
+// short bios shown when you tap a seat: when/where, who they were, big idea, best known for
+const BIOS = {
+ "Heraclitus": {
+  "era": "c. 535–475 BCE · Ephesus (modern Turkey)",
+  "bio": "A Greek thinker famous for being cryptic. Only scattered fragments of his writing survive, mostly short, riddle-like sayings quoted by later authors.",
+  "idea": "Everything is constantly changing. You can't step into the same river twice, because new water is always flowing.",
+  "work": "Fragments from his lost book, often called On Nature"
+ },
+ "Nietzsche": {
+  "era": "1844–1900 · Germany",
+  "bio": "A German philosopher and former classics professor who wrote in sharp, poetic bursts rather than formal arguments. He questioned the foundations of traditional morality and religion. His ideas were later badly distorted by others, including the Nazis, even though he openly attacked German nationalism and antisemitism.",
+  "idea": "“God is dead”: with old certainties gone, people must create their own values and say yes to life, suffering included.",
+  "work": "Thus Spoke Zarathustra; Beyond Good and Evil"
+ },
+ "Epictetus": {
+  "era": "c. 50–135 CE · Born in Phrygia (modern Turkey); taught in Greece",
+  "bio": "Born a slave in the Roman Empire, he was later freed and became one of the most influential teachers of Stoicism. He wrote nothing himself; a student recorded his lectures.",
+  "idea": "Some things are up to you (your judgments and choices) and most things aren't. Peace comes from focusing only on the first.",
+  "work": "The Enchiridion (“Handbook”) and the Discourses"
+ },
+ "Marcus Aurelius": {
+  "era": "121–180 CE · Roman Emperor",
+  "bio": "Ruler of the Roman Empire for almost twenty years, through wars and a devastating plague. At night he wrote private notes to himself on how to live well, never intending them for publication.",
+  "idea": "Stoic self-discipline: accept what you can't control, do your duty, and treat obstacles as chances to practice virtue.",
+  "work": "Meditations"
+ },
+ "Camus": {
+  "era": "1913–1960 · French Algeria and France",
+  "bio": "A French-Algerian novelist, journalist and Resistance writer who won the Nobel Prize in Literature in 1957. He's often grouped with the existentialists, though he rejected the label.",
+  "idea": "Life is “absurd”: we crave meaning in a universe that offers none. The answer is neither despair nor false hope but living fully anyway, like Sisyphus pushing his boulder.",
+  "work": "The Stranger; The Myth of Sisyphus; The Plague"
+ },
+ "Spinoza": {
+  "era": "1632–1677 · Amsterdam, Dutch Republic",
+  "bio": "A Dutch philosopher from a Portuguese-Jewish family who was expelled from his community for his radical ideas. He lived simply, grinding lenses for a living, and his major work was published only after his death.",
+  "idea": "God and Nature are the same thing. Freedom comes not from escaping cause and effect but from understanding it.",
+  "work": "Ethics"
+ },
+ "Diogenes": {
+  "era": "c. 412–323 BCE · Sinope (modern Turkey); lived in Athens and Corinth",
+  "bio": "The most famous Cynic, a philosopher who lived as a beggar, reportedly slept in a large clay jar, and mocked social conventions in public. Legend says he carried a lamp in daylight “looking for an honest man” and told Alexander the Great to stop blocking his sunlight.",
+  "idea": "Happiness comes from living simply and naturally, free from wealth, status and the need for others' approval.",
+  "work": "Stories and sayings about him; none of his writings survive"
+ },
+ "Lao Tzu": {
+  "era": "Traditionally 6th century BCE · China",
+  "bio": "The legendary founder of Daoism, said to have been a record-keeper at a Chinese royal court. Historians aren't sure he was a single real person, but the short book attributed to him became one of the most translated texts in the world.",
+  "idea": "Follow the Dao, the natural way of things. Act without forcing (wu wei), like water that wins by yielding.",
+  "work": "Tao Te Ching"
+ },
+ "de Beauvoir": {
+  "era": "1908–1986 · Paris, France",
+  "bio": "A French existentialist philosopher, novelist and lifelong partner of Jean-Paul Sartre. Her study of how women have been defined by men became a founding text of modern feminism.",
+  "idea": "“One is not born, but rather becomes, a woman.” Much of what's called natural about gender is actually shaped by society.",
+  "work": "The Second Sex"
+ },
+ "Alan Watts": {
+  "era": "1915–1973 · England and the United States",
+  "bio": "A British-born writer and speaker who popularized Zen Buddhism and Daoism for Western audiences. His radio talks and lectures, full of humor and vivid metaphors, still circulate widely today.",
+  "idea": "The separate self is an illusion. You aren't a stranger in the universe but something the whole universe is doing, like a wave is something the ocean is doing.",
+  "work": "The Way of Zen; The Book: On the Taboo Against Knowing Who You Are"
+ },
+ "Socrates": {
+  "era": "c. 470–399 BCE · Athens, Greece",
+  "bio": "Often called the father of Western philosophy, though he never wrote anything down. We know him mainly through his student Plato. He spent his life questioning people in the streets of Athens, and was sentenced to death by poison for “corrupting the youth.”",
+  "idea": "“The unexamined life is not worth living.” Wisdom starts with admitting what you don't know, and sharp questions reveal it.",
+  "work": "The Socratic method of teaching through questions"
+ },
+ "Plato": {
+  "era": "c. 428–348 BCE · Athens, Greece",
+  "bio": "Socrates' most famous student, who wrote philosophy as dialogues with Socrates as the main character. He founded the Academy in Athens, often called the first university in the Western world.",
+  "idea": "The world we see is like shadows on a cave wall. True reality is a realm of perfect, unchanging “Forms” we can grasp only through reason.",
+  "work": "The Republic (including the Allegory of the Cave)"
+ },
+ "Aristotle": {
+  "era": "384–322 BCE · Born in Stagira; taught in Athens",
+  "bio": "Plato's student and the tutor of Alexander the Great. He wrote on nearly everything (logic, biology, politics, ethics, poetry), and his ideas shaped science and education for almost 2,000 years.",
+  "idea": "Virtue is a habit, a balanced middle between extremes (courage sits between cowardice and recklessness), and living it leads to true happiness.",
+  "work": "Nicomachean Ethics; Politics"
+ },
+ "Confucius": {
+  "era": "551–479 BCE · State of Lu, China",
+  "bio": "A teacher and minor government official whose sayings, collected by his students, became the foundation of Chinese ethics, education and government for over two thousand years.",
+  "idea": "A good society grows from good people: honor your relationships, practice respect and ritual, and work constantly at improving your own character.",
+  "work": "The Analects"
+ },
+ "Buddha": {
+  "era": "c. 5th century BCE · Born in Lumbini (modern Nepal); taught in northern India",
+  "bio": "Siddhartha Gautama was a prince who left his comfortable life to understand suffering. After years of searching, he reached enlightenment while meditating under a tree and spent the rest of his life teaching. His followers founded Buddhism.",
+  "idea": "Suffering comes from craving and clinging to things that are always changing, including our sense of a fixed self. Letting go of that craving ends suffering.",
+  "work": "The Four Noble Truths and the Eightfold Path"
+ },
+ "Kant": {
+  "era": "1724–1804 · Königsberg, Prussia",
+  "bio": "A German professor who famously kept such a strict daily routine that neighbors were said to set their clocks by his walks. He is one of the most influential philosophers in history.",
+  "idea": "Act only in ways you could will everyone to act (the “categorical imperative”). Morality is about duty and reason, not consequences or feelings.",
+  "work": "Critique of Pure Reason; Groundwork of the Metaphysics of Morals"
+ },
+ "Rousseau": {
+  "era": "1712–1778 · Born in Geneva; lived mostly in France",
+  "bio": "A self-taught Genevan writer whose ideas about freedom and equality helped inspire the French Revolution. He also wrote an influential novel and a book on raising children.",
+  "idea": "“Man is born free, and everywhere he is in chains.” People are naturally good, but society corrupts them, so legitimate government must rest on the will of the people.",
+  "work": "The Social Contract; Emile"
+ },
+ "Hume": {
+  "era": "1711–1776 · Edinburgh, Scotland",
+  "bio": "A Scottish philosopher and historian, a leading figure of the Scottish Enlightenment and known for his good humor. His skepticism deeply influenced later thinkers, including Kant.",
+  "idea": "We never actually see one thing cause another, only one thing followed by another. Much of what we “know” rests on habit, not proof.",
+  "work": "A Treatise of Human Nature; An Enquiry Concerning Human Understanding"
+ },
+ "Sartre": {
+  "era": "1905–1980 · Paris, France",
+  "bio": "The best-known existentialist, also a novelist, playwright and political activist. He turned down the Nobel Prize in Literature in 1964, saying a writer shouldn't become an institution.",
+  "idea": "“Existence precedes essence”: you're born without a fixed purpose and define yourself through your choices, which means you're fully responsible for them.",
+  "work": "Being and Nothingness; Nausea; No Exit"
+ },
+ "Arendt": {
+  "era": "1906–1975 · Born in Germany; later lived in the United States",
+  "bio": "A German-Jewish political thinker who fled the Nazis and became an American citizen. Reporting on the trial of the Nazi official Adolf Eichmann, she reached a disturbing conclusion.",
+  "idea": "The “banality of evil”: terrible crimes can be carried out by ordinary people who simply stop thinking about what they're doing.",
+  "work": "The Origins of Totalitarianism; Eichmann in Jerusalem"
+ },
+ "Wittgenstein": {
+  "era": "1889–1951 · Born in Vienna; worked at Cambridge, England",
+  "bio": "An Austrian-British philosopher from one of Vienna's richest families who gave his fortune away. He worked as a schoolteacher and gardener at times, and changed his own philosophy dramatically between his early and later work.",
+  "idea": "Many philosophical problems come from misunderstanding language. Words get their meaning from how they're used in everyday life.",
+  "work": "Tractatus Logico-Philosophicus; Philosophical Investigations"
+ },
+ "Rumi": {
+  "era": "1207–1273 · Born in Central Asia; lived in Konya (modern Turkey)",
+  "bio": "A Persian poet, scholar and Sufi mystic whose poems about love and longing for God are still bestsellers around the world. His followers founded the order known for the “whirling dervish” dance.",
+  "idea": "Divine love is everywhere, and the longing you feel is itself a sign of it. Seek union with the beloved through the heart, not just the intellect.",
+  "work": "The Masnavi"
+ },
+ "Kierkegaard": {
+  "era": "1813–1855 · Copenhagen, Denmark",
+  "bio": "A Danish philosopher and devout but rebellious Christian, often called the father of existentialism. He wrote many books under made-up names to show different ways of seeing life.",
+  "idea": "Truth must be lived, not just reasoned out. Real faith needs a personal “leap,” a commitment no argument can make for you.",
+  "work": "Fear and Trembling; Either/Or"
+ },
+ "Mill": {
+  "era": "1806–1873 · London, England",
+  "bio": "An English philosopher, economist and member of Parliament, given an intense education by his father (he was learning Greek at three). He was an early champion of women's rights.",
+  "idea": "Do what produces the greatest happiness for the greatest number. Society should limit your freedom only to prevent harm to others.",
+  "work": "On Liberty; Utilitarianism; The Subjection of Women"
+ },
+ "Hobbes": {
+  "era": "1588–1679 · England",
+  "bio": "An English philosopher who lived through the chaos of the English Civil War, which shaped his view of human nature and government.",
+  "idea": "Without government, life would be “solitary, poor, nasty, brutish, and short.” People agree to a strong ruler in exchange for safety (the social contract).",
+  "work": "Leviathan"
+ },
+ "Locke": {
+  "era": "1632–1704 · England",
+  "bio": "An English philosopher and physician whose political ideas heavily influenced the American Declaration of Independence and modern democracy.",
+  "idea": "Everyone has natural rights to life, liberty and property, and government is legitimate only with the consent of the governed. The mind starts as a “blank slate.”",
+  "work": "Two Treatises of Government; An Essay Concerning Human Understanding"
+ },
+ "Simone Weil": {
+  "era": "1909–1943 · France",
+  "bio": "A French philosopher and mystic who left teaching to work in factories so she could understand workers' lives firsthand. She briefly joined the fight in the Spanish Civil War and died at 34.",
+  "idea": "Paying full attention to another person, especially someone who is suffering, is the rarest and purest form of generosity.",
+  "work": "Gravity and Grace; The Need for Roots"
+ },
+ "Wollstonecraft": {
+  "era": "1759–1797 · London, England",
+  "bio": "An English writer and early champion of women's rights who lived boldly against the expectations of her time. She was the mother of Mary Shelley, author of Frankenstein.",
+  "idea": "Women aren't naturally less rational than men; they're denied education. Give them equal schooling and they'll prove it.",
+  "work": "A Vindication of the Rights of Woman"
+ },
+ "Zhuangzi": {
+  "era": "c. 369–286 BCE · China",
+  "bio": "The second great Daoist thinker after Lao Tzu, known for his humor, strange stories and talking animals rather than formal arguments.",
+  "idea": "Our fixed viewpoints are less certain than we think. In his famous dream he was a butterfly, and woke unsure whether he was a man who dreamed he was a butterfly, or the reverse.",
+  "work": "The Zhuangzi"
+ },
+ "Foucault": {
+  "era": "1926–1984 · France",
+  "bio": "A French historian and philosopher who studied how institutions like prisons, hospitals and schools shape what societies treat as normal, sane or true.",
+  "idea": "Power isn't only held by rulers; it works through everyday systems that teach us to watch and police ourselves.",
+  "work": "Discipline and Punish; The History of Sexuality"
+ },
+ "Al-Ghazali": {
+  "era": "1058–1111 · Persia (modern Iran); taught in Baghdad",
+  "bio": "One of the most influential scholars in Islamic history. At the height of his fame as a professor in Baghdad, he had a spiritual crisis, left his post and became a wandering Sufi.",
+  "idea": "Logic alone can't reach the deepest truths. Real certainty comes from direct spiritual experience of God.",
+  "work": "The Incoherence of the Philosophers; The Revival of the Religious Sciences"
+ },
+ "Zeno of Citium": {
+  "era": "c. 334–262 BCE · Citium (Cyprus); taught in Athens",
+  "bio": "A merchant who, according to legend, turned to philosophy after a shipwreck left him in Athens. He founded Stoicism, named after the painted porch (stoa) where he taught.",
+  "idea": "Live in agreement with nature and reason. Virtue is the only true good; wealth, fame and pleasure don't matter in themselves.",
+  "work": "Founding Stoicism (his writings are lost)"
+ },
+ "Emerson": {
+  "era": "1803–1882 · Massachusetts, USA",
+  "bio": "An American essayist, poet and former minister who led the Transcendentalist movement and mentored Henry David Thoreau.",
+  "idea": "Trust yourself. Don't imitate others or follow the crowd; each person has direct access to truth through nature and their own intuition.",
+  "work": "Self-Reliance; Nature"
+ },
+ "Pythagoras": {
+  "era": "c. 570–495 BCE · Born on Samos; founded a community in southern Italy",
+  "bio": "A Greek mathematician and mystic who led a secretive community with strict rules. He wrote nothing himself, so legend and history about him are hard to separate.",
+  "idea": "Numbers are the hidden structure of reality, as in the simple ratios that make musical notes harmonize.",
+  "work": "The Pythagorean theorem (named after him) and musical harmony"
+ },
+ "Descartes": {
+  "era": "1596–1650 · France; worked mostly in the Dutch Republic",
+  "bio": "A French philosopher and mathematician, often called the father of modern philosophy. He also invented the coordinate graph (x and y axes) used in math class today.",
+  "idea": "“I think, therefore I am.” Doubt everything you can, and the one thing left standing is that you exist as a thinking being.",
+  "work": "Meditations on First Philosophy; Discourse on the Method"
+ },
+ "Hegel": {
+  "era": "1770–1831 · Germany",
+  "bio": "A German philosopher whose sweeping, notoriously difficult system influenced thinkers from Marx to the existentialists.",
+  "idea": "History moves forward through conflict: an idea meets its opposite, and the clash produces something new (the “dialectic”).",
+  "work": "Phenomenology of Spirit"
+ },
+ "Marx": {
+  "era": "1818–1883 · Born in Germany; lived mostly in London",
+  "bio": "A German philosopher, economist and revolutionary who spent most of his later life in London writing about capitalism. His ideas inspired communist movements and governments of the 20th century.",
+  "idea": "History is driven by class struggle. Under capitalism, those who own the factories profit from the labor of those who work in them.",
+  "work": "The Communist Manifesto (with Friedrich Engels); Capital"
+ },
+ "Heidegger": {
+  "era": "1889–1976 · Germany",
+  "bio": "A German philosopher whose work deeply influenced existentialism and modern thought. His membership in the Nazi party remains a lasting controversy.",
+  "idea": "We've forgotten to ask the most basic question: what does it mean to “be”? Facing our own death can wake us up to living authentically.",
+  "work": "Being and Time"
+ },
+ "Augustine": {
+  "era": "354–430 CE · Born in North Africa (modern Algeria)",
+  "bio": "A Roman-era bishop of the city of Hippo who, after a restless youth, converted to Christianity. He became one of the most influential thinkers in Christian history.",
+  "idea": "“Our heart is restless until it rests in you”: human longing points toward God, and only grace can heal a divided will.",
+  "work": "Confessions; The City of God"
+ },
+ "Epicurus": {
+  "era": "341–270 BCE · Born on Samos; taught in Athens",
+  "bio": "A Greek philosopher who founded a school called “the Garden,” open to women and slaves, unusual for its time. His name is often wrongly linked to luxury; he actually lived very simply.",
+  "idea": "Happiness is peace of mind: simple pleasures, good friends, and freedom from fear, especially fear of death, which “is nothing to us.”",
+  "work": "Letter to Menoeceus"
+ },
+ "Rawls": {
+  "era": "1921–2002 · Baltimore, USA",
+  "bio": "An American philosopher at Harvard whose work revived serious debate about justice and fairness in modern political philosophy.",
+  "idea": "Design society from behind a “veil of ignorance,” not knowing what position you'd be born into, and you'd choose rules that protect the worst-off.",
+  "work": "A Theory of Justice"
+ },
+ "Shankara": {
+  "era": "c. 8th century CE · India",
+  "bio": "An Indian philosopher and monk, traditionally said to have died young, who wrote influential commentaries on Hindu scriptures and founded monasteries across India.",
+  "idea": "The individual self (Atman) and ultimate reality (Brahman) are one and the same; the sense of being separate is an illusion.",
+  "work": "Commentaries on the Upanishads; founding Advaita Vedanta as a school"
+ },
+ "Fanon": {
+  "era": "1925–1961 · Born in Martinique; worked in Algeria",
+  "bio": "A psychiatrist and political thinker from the French Caribbean who joined Algeria's fight for independence from France. He died of leukemia at 36.",
+  "idea": "Colonialism doesn't just take land; it damages the minds of the colonized, teaching them to see themselves through their oppressors' eyes. Liberation has to be psychological as well as political.",
+  "work": "Black Skin, White Masks; The Wretched of the Earth"
+ },
+ "Russell": {
+  "era": "1872–1970 · Wales and England",
+  "bio": "A British philosopher, logician and mathematician who won the Nobel Prize in Literature and was jailed twice for his anti-war activism.",
+  "idea": "Clear thinking and logic are the best tools against confusion and dogma. Believe things only in proportion to the evidence.",
+  "work": "Principia Mathematica (with Alfred North Whitehead); A History of Western Philosophy"
+ },
+ "Machiavelli": {
+  "era": "1469–1527 · Florence, Italy",
+  "bio": "A Florentine diplomat who wrote a short guide to holding power after being pushed out of government. His name became a word for cunning, ruthless politics.",
+  "idea": "Leaders should judge actions by results, not ideals. It is safer to be feared than loved, if you can't be both.",
+  "work": "The Prince"
+ }
+};
+
 // the ever-present control seat — opens the picker instead of holding a bio
 const CONTROL_SEAT = { name:"+", open:true, empty:"tap to choose who joins the table" };
 
@@ -8291,13 +8577,18 @@ function selectSeat(i){
   detail.classList.add('show');
   nameEl.textContent = s.name;
 
-  if(s.quote){
-    quoteEl.style.display='block'; quoteEl.textContent = s.quote;
-    noteEl.style.display='block'; noteEl.textContent = s.note;
-    emptyEl.style.display='none';
+  const bio = BIOS[s.name];
+  const eraEl = document.getElementById('detailEra'), bioEl = document.getElementById('detailBio'), factsEl = document.getElementById('detailFacts');
+  quoteEl.style.display = 'none'; noteEl.style.display = 'none';
+  if(bio){
+    eraEl.textContent = bio.era; bioEl.textContent = bio.bio;
+    document.getElementById('detailIdea').textContent = bio.idea;
+    document.getElementById('detailWork').textContent = bio.work;
+    eraEl.style.display = 'block'; bioEl.style.display = 'block'; factsEl.style.display = 'block';
+    emptyEl.style.display = 'none';
   } else {
-    quoteEl.style.display='none'; noteEl.style.display='none';
-    emptyEl.style.display='block'; emptyEl.textContent = s.empty;
+    eraEl.style.display = 'none'; bioEl.style.display = 'none'; factsEl.style.display = 'none';
+    emptyEl.style.display = 'block'; emptyEl.textContent = s.empty;
   }
 }
 
