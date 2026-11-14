@@ -666,7 +666,11 @@
   .verdict .v-row{ margin-bottom: 0.75rem; }
   .verdict .v-label{ font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--text-dim); margin:0 0 0.15rem; }
   .verdict .v-text{ font-family:'Fraunces', serif; font-size:0.96rem; line-height:1.5; color: var(--text); margin:0; }
-  .verdict .v-quote-slot .v-label{ margin-top:0.9rem; }
+  .verdict .v-open .v-label{ margin-top:0.9rem; }
+  .verdict .v-takeup{ margin-top:0.6rem; background:none; border:1px solid var(--thread); color: var(--thread); font-family:'Fraunces', serif; font-size:0.8rem; letter-spacing:0.06em; padding:0.3rem 0.8rem; border-radius:999px; cursor:pointer; }
+  @media (hover:hover) and (pointer:fine){ .verdict .v-takeup:hover{ background: var(--thread); color:#1a130c; } }
+  .verdict.earlier{ opacity:0.72; }
+  .verdict.earlier .v-takeup{ display:none; }
   .verdict .v-quote{ margin: 0.35rem 0 0; padding-left: 0.9rem; border-left: 2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem; line-height:1.5; color: var(--text); }
   .verdict .v-quote cite{ display:block; margin-top:0.35rem; font-size:0.8rem; color: var(--thread); font-style:normal; }
   .t-entry.with-face{ display:flex; align-items:flex-start; gap:0.85rem; }
@@ -8855,20 +8859,31 @@ function stopThinking(){
 }
 
 // ---------- the verdict: a closing card summing up where the table landed ----------
-async function askVerdict(question, turns){
+async function askVerdict(question, turns, prev){
   const apiKey = getStoredApiKey();
   if(!apiKey) return null;
+  const prevText = prev
+    ? `\n\nAt the last checkpoint you summed it up like this:\nWhere they met: ${prev.agreed || ''}\nWhere they split: ${prev.split || ''}\n` +
+      `Build on that rather than starting over: keep what still holds, and say what moved since.`
+    : '';
   const prompt = `Here is a roundtable conversation between philosophers on the question: "${question}"\n\n` +
-    turns.map(t => `${t.name}${t.to ? ' (to ' + t.to + ')' : ''}: ${t.line}`).join('\n') +
-    `\n\nAs a neutral chronicler, sum up where the table landed. Respond ONLY with valid JSON, no code fences:\n` +
-    `Keep each answer to ONE plain sentence of at most 30 words.\n` +
-    `{"agreed": "one sentence on what most of them converged on (or that they found no common ground)",\n` +
-    ` "split": "one sentence naming the sharpest disagreement and who was on each side",\n` +
-    ` "line": {"name": "speaker", "text": "the single most memorable line, quoted exactly from the conversation"}}`;
+    turns.map(lineForPrompt).join('\n') + prevText +
+    `\n\nAs a neutral chronicler, sum up where the table stands now. Lines from "You" are the living visitor. Respond ONLY with valid JSON, no code fences. Each answer is ONE plain sentence of at most 30 words.\n` +
+    `{"agreed": "what most of them have converged on (or that they've found no common ground)",\n` +
+    ` "split": "the sharpest disagreement right now, and who is on each side",\n` +
+    (prev ? ` "shifted": "what changed since the last checkpoint: who moved, conceded, or dug in, and how they took any point from You",\n` : '') +
+    ` "open": "the most important question the table raised but has NOT settled, asked directly to the visitor so they could take it up (at most 25 words, ending in ?)"}`;
   try { return extractJSON(await callModel(prompt, 900), '{', '}'); } catch(e){ console.error(e); return null; }
 }
+// how one line of the transcript is written into a prompt (a "You" line notes which open question it answers)
+function lineForPrompt(t){
+  return `${t.name}${t.to ? ' (to ' + t.to + ')' : ''}${t.re ? ' (answering the open question "' + t.re + '")' : ''}: ${t.line}`;
+}
 
-let lastVerdict = null;   // kept so a shared link can include it
+// Each verdict is a checkpoint that stays in the transcript; a later one builds on the one before.
+let verdicts = [];        // [{ at: how many lines were in the transcript, v: the summary }]
+let lastVerdict = null;   // the latest one
+let takingUp = null;      // the open question you clicked "Take it up" on, until you send your reply
 // keep each verdict row to a glance: if the AI ran long, stop at the first sentence
 function shortVerdict(text){
   const t = String(text || '').trim();
@@ -8876,51 +8891,7 @@ function shortVerdict(text){
   const m = t.match(/^.*?[.!?](\s|$)/);
   return m ? m[0].trim() : t.split(/\s+/).slice(0, 40).join(' ') + '…';
 }
-// the philosophers' lines currently in the transcript, with how you voted on each
-function transcriptLines(){
-  return Array.from(document.querySelectorAll('#transcript .t-entry'))
-    .filter(e => e.dataset.name && e.dataset.name !== 'You')
-    .map(e => { const l = e.querySelector('.t-line');
-      return { name: e.dataset.name, text: (l && (l.dataset.fullText || l.textContent)) || '', vote: e.dataset.vote || '', at: +(e.dataset.votedAt || 0) }; });
-}
-const normLine = s => String(s || '').toLowerCase().replace(/[“”"'‘’.,;:!?—–-]/g, ' ').replace(/\s+/g, ' ').trim();
-// make sure the AI's "memorable line" was really said: exact match, or the clearly closest real line
-function verifyPick(pick, lines){
-  if(!pick || !pick.text) return null;
-  const p = normLine(pick.text);
-  let hit = lines.find(l => normLine(l.text).includes(p) || (p.length > 20 && p.includes(normLine(l.text))));
-  if(hit) return hit;
-  const words = new Set(p.split(' '));
-  let best = null, bestScore = 0;
-  lines.forEach(l => {
-    const w = new Set(normLine(l.text).split(' ')); let shared = 0; words.forEach(x => { if(w.has(x)) shared++; });
-    const score = shared / Math.max(words.size, w.size);
-    if(score > bestScore){ bestScore = score; best = l; }
-  });
-  return bestScore >= 0.6 ? best : null;   // too different: the AI invented it, so leave it out
-}
-// choose the quote: a line you agreed with wins; otherwise the AI's (verified) pick, unless you rejected it
-function fillVerdictQuote(card){
-  const slot = card.querySelector('.v-quote-slot'); if(!slot) return;
-  slot.innerHTML = '';
-  const lines = transcriptLines();
-  const aiPick = verifyPick(card.__v && card.__v.line, lines);
-  const agreed = lines.filter(l => l.vote === 'agree');
-  let chosen = null, label = '';
-  if(agreed.length){
-    chosen = (aiPick && agreed.find(l => l.text === aiPick.text)) || agreed.slice().sort((a, b) => b.at - a.at)[0];
-    label = 'The line that resonated with you';
-  } else if(aiPick && aiPick.vote !== 'disagree'){
-    chosen = aiPick; label = 'The line that stood out';
-  }
-  if(!chosen) return;
-  const l = document.createElement('p'); l.className = 'v-label'; l.textContent = label;
-  const q = document.createElement('blockquote'); q.className = 'v-quote';
-  q.textContent = '“' + chosen.text + '”';
-  const by = document.createElement('cite'); by.textContent = '— ' + chosen.name;
-  q.appendChild(by); slot.appendChild(l); slot.appendChild(q);
-}
-function renderVerdictInto(card, v){
+function renderVerdictInto(card, v, n){
   card.classList.remove('pending');
   card.innerHTML = '';
   card.__v = v;
@@ -8930,29 +8901,54 @@ function renderVerdictInto(card, v){
     const t = document.createElement('p'); t.className = 'v-text'; t.textContent = shortVerdict(text);
     row.appendChild(l); row.appendChild(t); card.appendChild(row);
   };
-  const title = document.createElement('p'); title.className = 'v-title'; title.textContent = 'The table’s verdict';
+  const title = document.createElement('p'); title.className = 'v-title';
+  title.textContent = n > 1 ? 'Where the table stands · checkpoint ' + n : 'Where the table stands';
   card.appendChild(title);
   if(v.agreed) add('agreed', 'Where they met', v.agreed);
   if(v.split) add('split', 'Where they split', v.split);
-  const slot = document.createElement('div'); slot.className = 'v-quote-slot'; card.appendChild(slot);
-  fillVerdictQuote(card);
+  if(v.shifted) add('shifted', 'What shifted', v.shifted);
+  if(v.open){
+    const slot = document.createElement('div'); slot.className = 'v-open';
+    const l = document.createElement('p'); l.className = 'v-label'; l.textContent = 'Still open';
+    const q = document.createElement('blockquote'); q.className = 'v-quote'; q.textContent = shortVerdict(v.open);
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'v-takeup'; b.textContent = 'Take it up';
+    b.addEventListener('click', () => takeUpQuestion(v.open));
+    slot.appendChild(l); slot.appendChild(q); slot.appendChild(b); card.appendChild(slot);
+  }
+}
+// "Take it up": point the chime-in box at the open question
+function takeUpQuestion(q){
+  const row = document.getElementById('chimeInRow'), input = document.getElementById('chimeInInput');
+  if(!row || !input) return;
+  takingUp = q;
+  row.style.display = 'flex';
+  input.placeholder = 'Your answer to: ' + q;
+  input.focus();
+  row.scrollIntoView({ block: 'nearest', behavior: REDUCED_MOTION ? 'auto' : 'smooth' });
+}
+// only the newest checkpoint offers "Take it up"; earlier ones fade back a little
+function markLatestVerdict(){
+  const cards = document.querySelectorAll('#transcript .verdict');
+  cards.forEach((c, i) => c.classList.toggle('earlier', i < cards.length - 1));
 }
 
 async function addVerdict(gen){
   const panel = document.getElementById('transcript');
   const spoken = fullTranscript.filter(t => t.name !== 'You');
   if(spoken.length < 3 || !currentQuestion) return;
-  const old = panel.querySelector('.verdict'); if(old) old.remove();
+  if(verdicts.length && verdicts[verdicts.length - 1].at >= fullTranscript.length) return;  // nothing new since the last checkpoint
   const card = document.createElement('div');
   card.className = 'verdict pending';
-  card.innerHTML = '<p class="v-title">The table’s verdict</p><p class="v-wait">Weighing what was said…</p>';
+  card.innerHTML = '<p class="v-title">Where the table stands</p><p class="v-wait">Weighing what was said…</p>';
   panel.appendChild(card);
   followScroll(false);
+  const at = fullTranscript.length;
   let v = null;
-  try { v = await askVerdict(currentQuestion, fullTranscript); } catch(e){ console.error(e); }
+  try { v = await askVerdict(currentQuestion, fullTranscript, lastVerdict); } catch(e){ console.error(e); }
   if(gen !== renderGen || !v){ card.remove(); return; }
-  lastVerdict = v;
-  renderVerdictInto(card, v);
+  verdicts.push({ at, v }); lastVerdict = v;
+  renderVerdictInto(card, v, verdicts.length);
+  markLatestVerdict();
   followScroll(false);
 }
 
@@ -8974,7 +8970,6 @@ function castVote(entry, name, kind){
   if(next){ bumpLean(all, name, next, 1);  bumpLean(sessionLean, name, next, 1); }
   saveLean(all);
   if(next){ entry.dataset.vote = next; entry.dataset.votedAt = Date.now(); } else { delete entry.dataset.vote; delete entry.dataset.votedAt; }
-  document.querySelectorAll('#transcript .verdict').forEach(c => { if(c.__v) fillVerdictQuote(c); });
   entry.querySelectorAll('.t-vote').forEach(b => b.classList.toggle('on', b.dataset.kind === next));
   const btn = document.getElementById('leaningsLink');
   btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
@@ -9085,7 +9080,7 @@ async function shareConversation(){
   if(!currentQuestion || !fullTranscript.length) return;
   const btn = document.getElementById('shareConvoLink');
   const data = { v: 1, q: currentQuestion, s: seats.filter(s => !s.open && !s.tribute).map(s => s.name),
-    t: fullTranscript.map(t => [t.name, t.to || '', t.line]), d: lastVerdict };
+    t: fullTranscript.map(t => [t.name, t.to || '', t.line, t.re || '']), d: lastVerdict, ds: verdicts.map(x => [x.at, x.v]) };
   const url = location.origin + location.pathname + '#c=' + await packConversation(data);
   const touch = window.matchMedia('(pointer: coarse)').matches;
   if(touch && navigator.share){
@@ -9103,17 +9098,23 @@ async function loadSharedFromHash(){
   if(!data || !data.q || !Array.isArray(data.t)) return;
   const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
   if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
-  const turns = data.t.map(([name, to, line]) => ({ name, to: to || null, line }));
+  const turns = data.t.map(([name, to, line, re]) => re ? ({ name, to: to || null, line, re }) : ({ name, to: to || null, line }));
   showStoredConversation({ question: data.q, turns });
   inAnswerMode = true;
   document.getElementById('askStatus').textContent = 'A shared conversation. Ask your own below, or tap a face to hear them up close.';
   turns.forEach((t, k) => { if(t.to) setTimeout(() => drawThread(t.name, t.to), 600 + k * 260); });
-  if(data.d){
-    lastVerdict = data.d;
+  // put each checkpoint back where it was, right after the line it followed
+  const list = Array.isArray(data.ds) && data.ds.length ? data.ds.map(([at, v]) => ({ at, v })) : (data.d ? [{ at: turns.length, v: data.d }] : []);
+  const entries = Array.from(document.querySelectorAll('#transcript .t-entry'));
+  verdicts = [];
+  list.forEach((x, i) => {
     const card = document.createElement('div'); card.className = 'verdict';
-    document.getElementById('transcript').appendChild(card);
-    renderVerdictInto(card, data.d);
-  }
+    const after = entries[Math.min(x.at, entries.length) - 1];
+    if(after) after.after(card); else document.getElementById('transcript').appendChild(card);
+    renderVerdictInto(card, x.v, i + 1);
+    verdicts.push(x); lastVerdict = x.v;
+  });
+  markLatestVerdict();
   document.getElementById('shareConvoLink').style.display = 'inline-block';
 }
 
@@ -9537,7 +9538,7 @@ function resetTranscriptPanel(){
 
 function startNewTranscript(question){
   renderGen++;
-  lastVerdict = null;
+  lastVerdict = null; verdicts = []; takingUp = null;
   if(location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);  // leaving a shared view
   followTranscript = true; showJump(false);
   { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
@@ -9690,7 +9691,7 @@ async function askTableRound(question, priorTurns, activeNames, onTurn){
   if(priorTurns.length){
     const hasUserTurn = priorTurns.some(t => t.name === 'You');
     priorText = `\n\nTHE CONVERSATION SO FAR:\n` +
-      priorTurns.map(t => `${t.name}: ${t.line}`).join('\n') +
+      priorTurns.map(lineForPrompt).join('\n') +
       `\n\nContinue this SAME conversation. Never restate a point already made above, by anyone. Each new line must add something: a new argument, a counterexample, a pointed question, a concession, or a sharper version of a disagreement aimed at a specific line above.` +
       (hasUserTurn ? ` Any line from "You" is the actual living person at the table, not a historical figure. When "You" speaks, the thinkers notice and answer them directly ("you"), engaging with exactly what they said.` : '');
   }
@@ -10189,8 +10190,10 @@ async function handleChimeIn(){
 
   const myGen = renderGen;
   const userTurn = { name: 'You', line: text };
+  if(takingUp) userTurn.re = takingUp;
   fullTranscript.push(userTurn);
   input.value = '';
+  takingUp = null; input.placeholder = 'Add your own voice to the table…';
 
   // the user's own words appear immediately — no typewriter, they already said it
   const panel = document.getElementById('transcript');
