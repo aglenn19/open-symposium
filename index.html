@@ -506,6 +506,34 @@
   }
 
   .transcript-wrap{ position:relative; }
+  /* ---------- Conversation / Philosophers' bios tabs ---------- */
+  #resetLink{ display:none !important; }   /* the old "Back to their bios" reset the conversation; the bios tab replaces it */
+  .t-tabs{ display:flex; gap:0.35rem; margin-bottom:0.6rem; }
+  .t-tab{
+    position:relative; flex:1; cursor:pointer; padding:0.55rem 0.8rem; border-radius:10px;
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:0.9rem;
+    color: var(--text-dim); background: transparent; border:1px solid var(--panel-line);
+  }
+  .t-tab.on{ color: var(--ink-deep); background: var(--thread); border-color: var(--thread); }
+  .t-tab .t-dot{ display:none; position:absolute; top:7px; right:10px; width:8px; height:8px; border-radius:50%; background: var(--thread); box-shadow: 0 0 8px rgba(227,178,60,0.8); }
+  .t-tab.new .t-dot{ display:block; animation: blink 1.2s step-start infinite; }
+  .bios-view .bio-hint{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.88rem; margin:0 0 0.9rem; }
+  .bio-card{ border:1px solid var(--panel-line); border-radius:12px; margin-bottom:0.6rem; background: rgba(9,11,22,0.35); }
+  .bio-card.speaking{ border-color: var(--thread); box-shadow: 0 0 0 1px rgba(227,178,60,0.25); }
+  .bio-head{ display:flex; align-items:center; gap:0.75rem; width:100%; padding:0.65rem 0.8rem; background:none; border:none; cursor:pointer; text-align:left; color: var(--text); }
+  .bio-head .t-face{ width:42px; height:42px; margin:0; }
+  .bio-head .t-face canvas{ width:24px; height:24px; }
+  .bio-who{ flex:1; min-width:0; }
+  .bio-who .bn{ display:block; font-family:'Fraunces', serif; font-style:italic; font-size:1.02rem; color: var(--thread); }
+  .bio-who .be{ display:block; font-family:'Space Grotesk', sans-serif; font-size:0.74rem; color: var(--text-dim); margin-top:0.1rem; }
+  .bio-tag{ font-family:'Fraunces', serif; font-style:italic; font-size:0.72rem; color: var(--ink-deep); background: var(--thread); border-radius:999px; padding:0.1rem 0.55rem; display:none; }
+  .bio-card.speaking .bio-tag{ display:inline-block; }
+  .bio-chev{ color: var(--text-dim); transition: transform .2s ease; }
+  .bio-card.open .bio-chev{ transform: rotate(90deg); }
+  .bio-body{ display:none; padding:0 0.95rem 0.9rem; }
+  .bio-card.open .bio-body{ display:block; }
+  .bio-body .detail-bio{ font-size:0.95rem; }
+  .bio-lines{ margin-top:0.2rem; font-family:'Fraunces', serif; font-style:italic; font-size:0.82rem; color: var(--thread); background:none; border:1px solid var(--thread-dim); border-radius:999px; padding:0.35rem 0.85rem; cursor:pointer; }
   .jump-latest{
     position:absolute; left:50%; bottom:1rem; transform: translate(-50%, 12px);
     opacity:0; pointer-events:none; transition: opacity .25s ease, transform .25s ease;
@@ -986,10 +1014,15 @@
   </div>
 
   <div class="layout-right">
+    <div class="t-tabs" role="tablist">
+      <button type="button" id="tabConvo" class="t-tab on" role="tab">Conversation<span class="t-dot"></span></button>
+      <button type="button" id="tabBios" class="t-tab" role="tab">Philosophers&rsquo; bios</button>
+    </div>
     <div class="transcript-wrap">
     <div class="transcript" id="transcript">
       <p class="transcript-placeholder" id="transcriptPlaceholder">Ask something below — the conversation unfolds here, live, as each round arrives</p>
     </div>
+    <div class="transcript bios-view" id="biosView" style="display:none;"></div>
     <button type="button" id="jumpLatest" class="jump-latest">New replies &darr;</button>
     </div>
     <button type="button" id="stopBtn" class="stop-btn" style="display:none;">Stop</button>
@@ -8805,6 +8838,73 @@ async function loadSharedFromHash(){
   document.getElementById('shareConvoLink').style.display = 'inline-block';
 }
 
+// ---------- the bios tab: learn about anyone at the table without pausing the conversation ----------
+let biosOpen = false, currentSpeaker = null;
+function showTab(which){
+  biosOpen = which === 'bios';
+  document.getElementById('tabConvo').classList.toggle('on', !biosOpen);
+  document.getElementById('tabBios').classList.toggle('on', biosOpen);
+  document.getElementById('transcript').style.display = biosOpen ? 'none' : 'block';
+  document.getElementById('biosView').style.display = biosOpen ? 'block' : 'none';
+  if(biosOpen){ renderBios(); showJump(false); }
+  else {
+    document.getElementById('tabConvo').classList.remove('new');
+    if(followTranscript){ const t = transcriptEl(); t.scrollTop = t.scrollHeight; }
+  }
+}
+function renderBios(openName){
+  const view = document.getElementById('biosView');
+  const keep = new Set(Array.from(view.querySelectorAll('.bio-card.open')).map(c => c.dataset.name));
+  if(openName) keep.add(openName);
+  view.innerHTML = '<p class="bio-hint">Everyone at the table. Tap a name to learn who they were; the conversation keeps going while you read.</p>';
+  seats.filter(s => !s.open && !s.tribute).forEach(s => {
+    const B = BIOS[s.name]; if(!B) return;
+    const card = document.createElement('div');
+    card.className = 'bio-card' + (keep.has(s.name) ? ' open' : '') + (s.name === currentSpeaker ? ' speaking' : '');
+    card.dataset.name = s.name;
+    const head = document.createElement('button'); head.type = 'button'; head.className = 'bio-head';
+    head.appendChild(leanFace(s.name));
+    const who = document.createElement('span'); who.className = 'bio-who';
+    const n = document.createElement('span'); n.className = 'bn'; n.textContent = s.name;
+    const e = document.createElement('span'); e.className = 'be'; e.textContent = B.era;
+    who.appendChild(n); who.appendChild(e); head.appendChild(who);
+    const tag = document.createElement('span'); tag.className = 'bio-tag'; tag.textContent = 'speaking now'; head.appendChild(tag);
+    const chev = document.createElement('span'); chev.className = 'bio-chev'; chev.textContent = '›'; head.appendChild(chev);
+    head.addEventListener('click', () => card.classList.toggle('open'));
+    const body = document.createElement('div'); body.className = 'bio-body';
+    const bio = document.createElement('p'); bio.className = 'detail-bio'; bio.textContent = B.bio; body.appendChild(bio);
+    const facts = document.createElement('div'); facts.className = 'detail-facts';
+    [['Big idea', B.idea], ['Best known for', B.work]].forEach(([label, text]) => {
+      const f = document.createElement('p'); const l = document.createElement('span'); l.className = 'fact-label'; l.textContent = label;
+      const t = document.createElement('span'); t.textContent = text; f.appendChild(l); f.appendChild(t); facts.appendChild(f);
+    });
+    body.appendChild(facts);
+    card.appendChild(head); card.appendChild(body);
+    if(document.querySelector('.t-entry[data-name="' + CSS.escape(s.name) + '"]')) addLinesButton(card);
+    view.appendChild(card);
+  });
+  if(openName){
+    const c = view.querySelector('.bio-card[data-name="' + CSS.escape(openName) + '"]');
+    if(c) view.scrollTo({ top: c.offsetTop - 12, behavior: 'smooth' });
+  }
+}
+// "See what they've said": jumps back to the conversation with their lines highlighted
+function addLinesButton(card){
+  if(card.querySelector('.bio-lines')) return;
+  const name = card.dataset.name;
+  const go = document.createElement('button'); go.type = 'button'; go.className = 'bio-lines'; go.textContent = 'See what they’ve said →';
+  go.addEventListener('click', () => { showTab('convo'); highlightSpeaker(name); });
+  card.querySelector('.bio-body').appendChild(go);
+}
+function markSpeakingBio(){
+  document.querySelectorAll('#biosView .bio-card').forEach(c => {
+    c.classList.toggle('speaking', c.dataset.name === currentSpeaker);
+    if(c.dataset.name === currentSpeaker) addLinesButton(c);   // they've now said something, so offer the jump
+  });
+}
+document.getElementById('tabConvo').addEventListener('click', () => showTab('convo'));
+document.getElementById('tabBios').addEventListener('click', () => showTab('bios'));
+
 // ---------- faces in the transcript ----------
 // Wraps a transcript entry as [face] [name + line + share], using portraits/<name>.jpg when it
 // exists, otherwise the philosopher's symbol; "You" gets a simple badge.
@@ -8849,6 +8949,7 @@ function selectSeat(i){
 
   seatObjects.forEach(entry => setSeatVisual(entry, entry.index === i));
   currentIndex = i;
+  if(biosOpen) renderBios(s.name);
 
   const entry = seatObjects[i];
   desiredTarget.set(entry.x*0.32, 0.25, entry.z*0.32);
@@ -9039,6 +9140,7 @@ function showJump(on){ const b = document.getElementById('jumpLatest'); if(b) b.
 // call after adding to the transcript; force = true when the reader just acted (asked, chimed in)
 function followScroll(force){
   const p = transcriptEl();
+  if(biosOpen){ document.getElementById('tabConvo').classList.add('new'); return; }
   if(force) followTranscript = true;
   if(followTranscript){
     autoScrollUntil = performance.now() + 900;
@@ -9134,6 +9236,7 @@ function exportLineCard(name, line){
 
 function resetTranscriptPanel(){
   renderGen++;
+  if(biosOpen) setTimeout(() => renderBios(), 0);
   followTranscript = true; showJump(false);
   { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
   clearThreads();
@@ -9206,6 +9309,7 @@ async function appendTurnsTyped(turns, gen){
     }
 
     speakingBadge.innerHTML = '<span class="dot"></span>' + turn.name + ' is speaking';
+    currentSpeaker = turn.name; markSpeakingBio();
     speakingBadge.style.display = 'inline-flex';
     playChime();
     speakLine(turn.name, turn.line);
@@ -9255,7 +9359,7 @@ async function appendTurnsTyped(turns, gen){
     await sleep(readPause);
   }
 
-  if(gen === renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); }
+  if(gen === renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); currentSpeaker = null; markSpeakingBio(); }
 }
 
 // which AI and model voice the table is chosen by each visitor under "Connect your AI" (defaults live in PROVIDERS)
@@ -9599,6 +9703,7 @@ async function handleAskSubmit(){
   currentQuestion = q;
   inAnswerMode = true;
 
+  if(biosOpen) showTab('convo');
   const myGen = startNewTranscript(q);
   let typeQueue = Promise.resolve();
   let roundCount = 0;
@@ -9765,6 +9870,7 @@ async function handleChimeIn(){
   entry.appendChild(nameEl);
   entry.appendChild(lineEl);
   decorateEntry(entry); panel.appendChild(entry);
+  if(biosOpen) showTab('convo');
   followScroll(true);
 
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
