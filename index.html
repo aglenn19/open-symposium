@@ -8279,10 +8279,8 @@ function selectSeat(i){
   const entry = seatObjects[i];
   desiredTarget.set(entry.x*0.32, 0.25, entry.z*0.32);
 
-  if(inAnswerMode){
-    highlightSpeaker(s.name);
-    return;
-  }
+  // during or after a conversation, also highlight what they said, but still show their bio
+  if(inAnswerMode) highlightSpeaker(s.name);
 
   const detail = document.getElementById('detail');
   const nameEl = document.getElementById('detailName');
