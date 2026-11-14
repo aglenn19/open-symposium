@@ -408,6 +408,8 @@
     color: var(--thread);
     animation: pulseRing 2.6s ease-in-out infinite;
   }
+  .edit-table-link .link-icon{ transition: transform 0.25s ease; }
+  .edit-table-link.open .link-icon{ transform: rotate(45deg); animation: none; }
   @keyframes pulseRing{
     0%, 100% { box-shadow: 0 0 0 0 rgba(227,178,60,0.35); }
     50% { box-shadow: 0 0 0 4px rgba(227,178,60,0); }
@@ -722,7 +724,6 @@
       <a href="#" id="pickerRandom" class="picker-action">Random</a>
       <a href="#" id="pickerDuel" class="picker-action">Duel</a>
       <a href="#" id="pickerSelectAll" class="picker-action">Everyone</a>
-      <a href="#" id="pickerClose" class="picker-action">Close</a>
     </div>
   </div>
   <div id="pickerChips" class="picker-chips"></div>
@@ -8087,14 +8088,19 @@ function toggleSeat(name){
 
 function openPicker(){
   document.getElementById('pickerPanel').classList.add('show');
+  document.getElementById('editTableLink').classList.add('open');
   renderPickerChips();
 }
 function closePicker(){
   document.getElementById('pickerPanel').classList.remove('show');
+  document.getElementById('editTableLink').classList.remove('open');
 }
 
-document.getElementById('editTableLink').addEventListener('click', (e) => { e.preventDefault(); openPicker(); });
-document.getElementById('pickerClose').addEventListener('click', (e) => { e.preventDefault(); closePicker(); });
+// "Choose who's at the table" opens the list, and clicking it again closes it
+document.getElementById('editTableLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  if(document.getElementById('pickerPanel').classList.contains('show')) closePicker(); else openPicker();
+});
 document.getElementById('pickerSelectAll').addEventListener('click', (e) => {
   e.preventDefault();
   selectedNames = ALL_SEATS.map(s => s.name);
