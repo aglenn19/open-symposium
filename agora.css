@@ -55,3 +55,11 @@
 .ag-google{ background:#fff; color:#1f1f1f; border-color:#fff; }
 .ag-facebook{ background:#1877f2; color:#fff; border-color:#1877f2; }
 .ag-or{ text-align:center; font-family:'Fraunces', serif; font-style:italic; font-size:0.84rem; color: var(--text-dim); margin:0.4rem 0 0; }
+
+/* ---------- pill-shaped link buttons (e.g. "← The table") ---------- */
+a.ag-pill, a.ag-pill:visited{
+  display:inline-block; font-family:'Fraunces', serif; font-size:0.86rem; color: var(--text); text-decoration:none;
+  padding:0.4rem 0.9rem; border-radius:999px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.7);
+  transition: border-color .15s ease, background .15s ease;
+}
+@media (hover:hover) and (pointer:fine){ a.ag-pill:hover{ border-color: var(--thread-dim); background: rgba(227,178,60,0.1); } }
