@@ -1,0 +1,50 @@
+/* agora.css: shared look for the Agora pieces (sign-in, account, feed, conversation page) */
+:root{
+  --ink:#0e1120; --ink-deep:#090b16; --panel:#161a2e; --panel-line:#262c48;
+  --thread:#e3b23c; --thread-dim:#6b5a2c; --text:#ece8dc; --text-dim:#8991ac; --bad:#e08a7a; --good:#7fb88f;
+}
+
+/* ---------- top-right nav (on both pages) ---------- */
+.ag-nav{ position:absolute; top:0.9rem; right:1rem; display:flex; gap:0.5rem; align-items:center; z-index:20; }
+.ag-nav a.ag-navlink, .ag-account{
+  font-family:'Fraunces', serif; font-size:0.86rem; color: var(--text); text-decoration:none; cursor:pointer;
+  padding:0.4rem 0.9rem; border-radius:999px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.7);
+  transition: border-color .15s ease, background .15s ease;
+}
+.ag-account.signed-in{ color: var(--thread); }
+@media (hover:hover) and (pointer:fine){
+  .ag-nav a.ag-navlink:hover, .ag-account:hover{ border-color: var(--thread-dim); background: rgba(227,178,60,0.1); }
+}
+
+/* ---------- modal ---------- */
+.ag-modal-back{ position:fixed; inset:0; background: rgba(5,6,12,0.72); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem; }
+.ag-modal{ position:relative; width:100%; max-width:420px; background: var(--panel); border:1px solid var(--panel-line); border-radius:14px; padding:1.4rem 1.4rem 1.2rem; color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.ag-x{ position:absolute; top:0.6rem; right:0.7rem; background:none; border:none; color: var(--text-dim); font-size:1.5rem; cursor:pointer; line-height:1; }
+.ag-modal-title{ font-family:'Fraunces', serif; font-size:1.25rem; margin:0 0 0.5rem; }
+.ag-modal-lead{ font-family:'Fraunces', serif; color: var(--text-dim); font-size:0.94rem; line-height:1.55; margin:0 0 0.9rem; }
+.ag-modal-lead b{ color: var(--text); font-weight:500; }
+.ag-form{ display:flex; flex-direction:column; gap:0.6rem; }
+.ag-form input[type=email], .ag-form input[type=text], .ag-delete input{
+  font-family:'Space Grotesk', sans-serif; font-size:1rem; padding:0.7rem 0.85rem; border-radius:9px;
+  border:1px solid var(--panel-line); background: var(--ink); color: var(--text); width:100%;
+}
+.ag-form input:focus, .ag-delete input:focus{ outline:none; border-color: var(--thread-dim); }
+.ag-check{ font-family:'Fraunces', serif; font-size:0.86rem; color: var(--text-dim); line-height:1.45; }
+.ag-check a, .ag-small-link{ color: var(--thread); }
+.ag-small-link{ display:inline-block; margin-top:1rem; font-family:'Fraunces', serif; font-style:italic; font-size:0.84rem; }
+.ag-btn{
+  font-family:'Space Grotesk', sans-serif; font-size:0.92rem; padding:0.65rem 1rem; border-radius:999px; cursor:pointer;
+  border:1px solid var(--panel-line); background: transparent; color: var(--text);
+}
+.ag-btn.primary{ background: var(--thread); color:#1a130c; border-color: var(--thread); font-weight:500; }
+.ag-btn.danger{ color: var(--bad); border-color: rgba(224,138,122,0.4); }
+.ag-btn:disabled{ opacity:0.6; cursor:default; }
+.ag-row{ display:flex; gap:0.6rem; margin-top:1rem; flex-wrap:wrap; }
+.ag-delete{ margin-top:1rem; display:flex; flex-direction:column; gap:0.6rem; }
+.ag-msg{ margin:0; min-height:1.1em; font-family:'Fraunces', serif; font-style:italic; font-size:0.86rem; color: var(--text-dim); }
+.ag-msg.bad{ color: var(--bad); } .ag-msg.good{ color: var(--good); }
+
+/* ---------- faces ---------- */
+.ag-face{ width:30px; height:30px; border-radius:50%; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  border:1px solid var(--thread-dim); background: var(--ink); font-family:'Fraunces', serif; font-size:0.75rem; color: var(--thread); }
+.ag-face img{ width:100%; height:100%; object-fit:cover; object-position:50% 30%; }

@@ -901,9 +901,16 @@
 </style>
 <!-- Usage stats for the site owner (Umami). Cookie-free; nothing visible to visitors.
      data-exclude-hash: shared conversation links live after the #, so they are never sent. -->
+<!-- The Agora (accounts + publishing). Loaded "defer" so the table never waits on it. -->
+<link rel="stylesheet" href="agora.css">
+<script>window.agoraLoad = new Promise(r => { window.__agoraReady = r; setTimeout(() => r(null), 12000); });  // gives up after 12s if agora-core.js is missing</script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script defer src="agora-core.js"></script>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
 </head>
 <body>
+
+<nav class="ag-nav" id="agNav"><a class="ag-navlink" href="agora.html">The Agora</a></nav>
 
 <header>
   <span class="eyebrow">ΣΥΜΠΟΣΙΟΝ</span>
@@ -943,6 +950,7 @@
     <div class="convo-actions">
       <a href="#" id="continueLink" class="convo-btn primary" style="display:none;">Keep talking</a>
       <a href="#" id="shareConvoLink" class="convo-btn primary" style="display:none;">Share conversation</a>
+      <a href="#" id="publishLink" class="convo-btn primary" style="display:none;">Publish to the Agora</a>
       <a href="#" id="copyLink" class="convo-btn" style="display:none;">Copy conversation</a>
       <a href="#" id="resetLink" class="convo-btn" style="display:none;">Back to their bios</a>
     </div>
@@ -9104,12 +9112,18 @@ async function loadSharedFromHash(){
   try { data = await unpackConversation(location.hash.slice(3)); } catch(e){ console.error('bad share link', e); return; }
   if(!data || !data.q || !Array.isArray(data.t)) return;
   track('shared-link-opened');
+  replayConversation(data, 'A shared conversation. Ask your own below, or tap a face to hear them up close.');
+}
+// replays a finished conversation at the table: seats, transcript, threads and checkpoints
+// data = { q: question, s: [seated names], t: [[name, to, line, re]], ds: [[afterLine, checkpoint]] }
+function replayConversation(data, statusText){
   const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
   if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
   const turns = data.t.map(([name, to, line, re]) => re ? ({ name, to: to || null, line, re }) : ({ name, to: to || null, line }));
   showStoredConversation({ question: data.q, turns });
   inAnswerMode = true;
-  document.getElementById('askStatus').textContent = 'A shared conversation. Ask your own below, or tap a face to hear them up close.';
+  document.getElementById('askStatus').textContent = statusText;
+  viewingShared = true;
   turns.forEach((t, k) => { if(t.to) setTimeout(() => drawThread(t.name, t.to), 600 + k * 260); });
   // put each checkpoint back where it was, right after the line it followed
   const list = Array.isArray(data.ds) && data.ds.length ? data.ds.map(([at, v]) => ({ at, v })) : (data.d ? [{ at: turns.length, v: data.d }] : []);
@@ -9125,6 +9139,117 @@ async function loadSharedFromHash(){
   markLatestVerdict();
   document.getElementById('shareConvoLink').style.display = 'inline-block';
 }
+
+// ---------- the Agora: publish this conversation, or reopen a published one ----------
+let viewingShared = false;     // true while showing someone else's conversation (shared link or Agora): no Publish button
+let published = null;          // { id, lines } once this conversation is published
+const cameFromSignIn = /access_token=/.test(location.hash);   // arrived from the emailed sign-in link
+
+function updatePublishButton(){
+  const b = document.getElementById('publishLink'); if(!b) return;
+  if(viewingShared || !fullTranscript.some(t => t.name !== 'You')){ b.style.display = 'none'; return; }
+  b.style.display = 'inline-block';
+  if(published && published.lines === fullTranscript.length){ b.textContent = 'View in the Agora'; b.href = 'agora.html?c=' + published.id; }
+  else { b.textContent = published ? 'Publish update' : 'Publish to the Agora'; b.href = '#'; }
+}
+
+// the confirmation box before anything goes public
+function confirmPublish(ag){
+  return new Promise(resolve => {
+    let done = false;
+    const close = ag.modal((box, closeIt) => {
+      box.appendChild(ag.el('p', 'ag-modal-title', published ? 'Publish the update?' : 'Publish to the Agora?'));
+      const lead = ag.el('p', 'ag-modal-lead');
+      lead.innerHTML = 'Anyone can read it. It will show as published by <b></b>.' +
+        (published ? ' The new version replaces the one already up.' : '') + ' Keep it civil: argue with ideas, not people.';
+      lead.querySelector('b').textContent = (ag.profile && ag.profile.nickname) || 'you';
+      box.appendChild(lead);
+      const row = ag.el('div', 'ag-row');
+      const go = ag.el('button', 'ag-btn primary', 'Publish'); go.type = 'button';
+      const no = ag.el('button', 'ag-btn', 'Cancel'); no.type = 'button';
+      go.onclick = () => { done = true; closeIt(); resolve(true); };
+      no.onclick = () => { closeIt(); };
+      row.append(go, no); box.appendChild(row);
+    });
+    // resolve false if the box is closed any other way
+    const watch = setInterval(() => { if(!document.querySelector('.ag-modal-back')){ clearInterval(watch); if(!done) resolve(false); } }, 200);
+  });
+}
+
+async function publishConversation(){
+  const status = document.getElementById('askStatus');
+  const ag = await window.agoraLoad;
+  if(!ag || ag.offline){ status.textContent = "The Agora couldn't load. Check your connection and refresh."; return; }
+  await ag.ready;
+  if(!ag.requireSignIn('Sign in to publish. After you click the link in the email, come back to this tab and press Publish again. Your conversation stays here.')) return;
+  if(ag.profile && ag.profile.is_banned){ status.textContent = 'This account can no longer publish.'; return; }
+  if(!(await confirmPublish(ag))) return;
+  const btn = document.getElementById('publishLink');
+  btn.textContent = 'Publishing…';
+  const seated = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
+  const snapshot = fullTranscript.slice(), checks = verdicts.slice();
+  const isUpdate = !!published;
+  try {
+    // replace the earlier version if this conversation was already published
+    if(published) await ag.sb.from('conversations').delete().eq('id', published.id);
+    const conv = await ag.sb.from('conversations')
+      .insert({ question: currentQuestion.slice(0, 500), seated, model: currentModel() })
+      .select('id').single();
+    if(conv.error) throw conv.error;
+    const id = conv.data.id;
+    const lines = snapshot.map((t, i) => ({ conversation_id: id, position: i + 1, speaker: t.name,
+      to_speaker: t.to || null, body: String(t.line).slice(0, 2000), re: t.re ? String(t.re).slice(0, 500) : null }));
+    const l = await ag.sb.from('lines').insert(lines);
+    if(l.error){ await ag.sb.from('conversations').delete().eq('id', id); throw l.error; }
+    if(checks.length){
+      const k = await ag.sb.from('checkpoints').insert(checks.map(x => ({ conversation_id: id, after_position: x.at,
+        agreed: x.v.agreed || null, split: x.v.split || null, shifted: x.v.shifted || null, open_question: x.v.open || null })));
+      if(k.error) console.error('checkpoints not saved', k.error);   // the conversation itself is up; summaries are a bonus
+    }
+    published = { id, lines: snapshot.length };
+    track('published', { lines: snapshot.length, seated: seated.length, update: isUpdate });
+    status.textContent = 'Published. It’s in the Agora now.';
+  } catch(err){
+    console.error(err);
+    status.textContent = "Couldn't publish: " + ag.plainError(err);
+  }
+  updatePublishButton();
+}
+document.getElementById('publishLink').addEventListener('click', e => {
+  const b = e.currentTarget;
+  if(b.getAttribute('href') !== '#') return;     // "View in the Agora" is a normal link
+  e.preventDefault(); publishConversation();
+});
+
+// index.html?agora=<id>: reopen a published conversation at the 3D table
+async function loadFromAgora(){
+  const id = new URLSearchParams(location.search).get('agora');
+  if(!id) return;
+  const status = document.getElementById('askStatus');
+  const ag = await window.agoraLoad;
+  if(!ag || ag.offline){ status.textContent = "Couldn't reach the Agora to load that conversation."; return; }
+  const [c, l, k] = await Promise.all([
+    ag.sb.from('conversations').select('*').eq('id', id).maybeSingle(),
+    ag.sb.from('lines').select('*').eq('conversation_id', id).order('position', { ascending: true }),
+    ag.sb.from('checkpoints').select('*').eq('conversation_id', id).order('after_position', { ascending: true })
+  ]);
+  if(c.error || !c.data || !(l.data || []).length){ status.textContent = 'That conversation isn’t available anymore.'; return; }
+  track('agora-seated');
+  replayConversation({
+    q: c.data.question, s: c.data.seated || [],
+    t: l.data.map(x => [x.speaker, x.to_speaker || '', x.body, x.re || '']),
+    ds: (k.data || []).map(x => [x.after_position, { agreed: x.agreed, split: x.split, shifted: x.shifted, open: x.open_question }])
+  }, 'From the Agora. Ask your own below, or tap a face to hear them up close.');
+}
+
+// account button in the corner, plus a hello when arriving from the sign-in email
+window.agoraLoad.then(ag => {
+  if(!ag || ag.offline) return;
+  ag.mountAccount(document.getElementById('agNav'));
+  ag.onChange(() => updatePublishButton());
+  if(cameFromSignIn) ag.ready.then(() => { if(ag.user && !fullTranscript.length){
+    document.getElementById('askStatus').textContent = 'You’re signed in to the Agora. If you were about to publish, go back to that tab and press Publish.'; } });
+});
 
 // ---------- the bios tab: learn about anyone at the table without pausing the conversation ----------
 let biosOpen = false, currentSpeaker = null;
@@ -9549,8 +9674,11 @@ function startNewTranscript(question){
   renderGen++;
   lastVerdict = null; verdicts = []; takingUp = null;
   if(location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);  // leaving a shared view
+  if(location.search.includes('agora=')) history.replaceState(null, '', location.pathname);                  // leaving a reopened Agora conversation
+  viewingShared = false; published = null;
   followTranscript = true; showJump(false);
   { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
+  { const pb = document.getElementById('publishLink'); if(pb) pb.style.display = 'none'; }
   sessionLean = {};
   clearThreads();
   fullTranscript = [];
@@ -10144,6 +10272,7 @@ async function incrementSessionCount(){
 
 function finishConversationUI(){
   document.getElementById('shareConvoLink').style.display = 'inline-block';
+  updatePublishButton();
   document.getElementById('continueLink').style.display = 'inline-block';
   document.getElementById('copyLink').style.display = 'inline-block';
   document.getElementById('chimeInRow').style.display = 'flex';
@@ -10669,10 +10798,10 @@ document.getElementById('resetLink').addEventListener('click', (e) => {
 
 if(document.fonts && document.fonts.ready){
   let booted = false;
-  const boot = () => { if(booted) return; booted = true; initScene(); loadSharedFromHash(); };
+  const boot = () => { if(booted) return; booted = true; initScene(); loadSharedFromHash(); loadFromAgora(); };
   document.fonts.ready.then(boot).catch(boot);
 } else {
-  initScene(); loadSharedFromHash();
+  initScene(); loadSharedFromHash(); loadFromAgora();
 }
 
 </script>

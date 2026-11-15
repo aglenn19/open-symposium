@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Agora · The Symposium</title>
+<meta name="description" content="Conversations between history's philosophers, published by the people who staged them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="agora.css">
+<style>
+  * { box-sizing:border-box; }
+  html{ background: var(--ink-deep); }
+  body{ margin:0; min-height:100vh; padding: 3.6rem 1.2rem 4rem; color: var(--text); font-family:'Space Grotesk', sans-serif; -webkit-font-smoothing:antialiased;
+    background: radial-gradient(ellipse 120% 60% at 50% 0%, #171b30 0%, var(--ink) 45%, var(--ink-deep) 100%); }
+  .wrap{ max-width: 760px; margin: 0 auto; }
+  .ag-nav{ position:fixed; }
+  .back{ position:fixed; top:0.9rem; left:1rem; z-index:20; }
+  header{ text-align:center; margin: 0.6rem 0 2rem; }
+  .eyebrow{ font-family:'Fraunces', serif; letter-spacing:0.4em; font-size:0.72rem; color: var(--thread); }
+  h1{ font-family:'Fraunces', serif; font-weight:400; font-size:2.6rem; margin:0.3rem 0 0.4rem; }
+  .subhead{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); margin:0; font-size:1.02rem; }
+
+  .filters{ display:flex; gap:0.6rem; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; }
+  .filters select{ font-family:'Space Grotesk', sans-serif; font-size:0.92rem; padding:0.5rem 0.8rem; border-radius:999px;
+    background: var(--panel); color: var(--text); border:1px solid var(--panel-line); }
+  .count{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.88rem; }
+
+  .card{ display:block; text-decoration:none; color:inherit; padding:1.1rem 1.2rem; margin-bottom:0.8rem; border-radius:14px;
+    border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); transition: border-color .15s ease, transform .15s ease; }
+  @media (hover:hover) and (pointer:fine){ .card:hover{ border-color: var(--thread-dim); transform: translateY(-1px); } }
+  .card.qotd{ border-color: var(--thread-dim); background: linear-gradient(180deg, rgba(227,178,60,0.1), rgba(22,26,46,0.75)); }
+  .card .label{ font-family:'Fraunces', serif; letter-spacing:0.14em; text-transform:uppercase; font-size:0.68rem; color: var(--thread); margin:0 0 0.4rem; }
+  .card .q{ font-family:'Fraunces', serif; font-size:1.18rem; line-height:1.4; margin:0 0 0.75rem; }
+  .card .meta{ display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap; }
+  .faces{ display:flex; }
+  .faces .ag-face{ margin-right:-7px; border-color: var(--panel); border-width:2px; width:32px; height:32px; }
+  .faces .more{ margin-left:12px; font-size:0.8rem; color: var(--text-dim); align-self:center; }
+  .byline{ font-family:'Fraunces', serif; font-style:italic; font-size:0.86rem; color: var(--text-dim); margin-left:auto; }
+
+  .empty, .note{ text-align:center; font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); padding:2.4rem 1rem; line-height:1.6; }
+  .empty a, .note a{ color: var(--thread); }
+  .more-btn{ display:block; margin:1.2rem auto 0; }
+
+  /* conversation view */
+  .convo-head .q{ font-family:'Fraunces', serif; font-weight:400; font-size:1.9rem; line-height:1.3; margin:0.2rem 0 0.6rem; text-align:center; }
+  .convo-head .byline{ display:block; text-align:center; margin:0 0 1rem; }
+  .convo-head .faces{ justify-content:center; margin-bottom:1.2rem; }
+  .actions{ display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.8rem; }
+  .actions .ag-btn{ text-decoration:none; }
+  .line{ display:flex; gap:0.85rem; padding:0.9rem 0; border-bottom:1px solid rgba(38,44,72,0.6); }
+  .line .ag-face{ width:44px; height:44px; }
+  .line .who{ font-family:'Fraunces', serif; color: var(--thread); font-size:0.95rem; margin:0 0 0.25rem; }
+  .line .who .to{ color: var(--text-dim); font-style:italic; }
+  .line .body{ font-family:'Fraunces', serif; font-size:1.06rem; line-height:1.6; margin:0; }
+  .line .re{ font-family:'Fraunces', serif; font-style:italic; font-size:0.84rem; color: var(--text-dim); margin:0 0 0.3rem; }
+  .line.human .who{ color: var(--text); }
+  .checkpoint{ margin:1.2rem 0; padding:1rem 1.2rem; border-radius:12px; border:1px solid var(--thread-dim);
+    background: linear-gradient(180deg, rgba(227,178,60,0.09), rgba(227,178,60,0.02)); }
+  .checkpoint .t{ font-family:'Fraunces', serif; letter-spacing:0.14em; text-transform:uppercase; font-size:0.7rem; color: var(--thread); margin:0 0 0.7rem; }
+  .checkpoint .l{ font-family:'Fraunces', serif; font-style:italic; font-size:0.78rem; color: var(--text-dim); margin:0 0 0.1rem; }
+  .checkpoint .v{ font-family:'Fraunces', serif; font-size:0.96rem; line-height:1.5; margin:0 0 0.6rem; }
+  .checkpoint blockquote{ margin:0.2rem 0 0; padding-left:0.8rem; border-left:2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.02rem; }
+  .delete-confirm{ display:none; text-align:center; margin:-1rem 0 1.6rem; font-family:'Fraunces', serif; color: var(--text-dim); }
+  .delete-confirm .ag-btn{ margin: 0.5rem 0.3rem 0; }
+  footer{ text-align:center; margin-top:3rem; font-family:'Fraunces', serif; font-size:0.84rem; color: var(--text-dim); }
+  footer a{ color: var(--text-dim); }
+
+  @media (max-width: 760px){
+    body{ padding: 3.6rem 0.8rem 3rem; }
+    h1{ font-size: 2rem; }
+    .convo-head .q{ font-size:1.45rem; }
+    .byline{ margin-left:0; width:100%; }
+    .line .ag-face{ width:36px; height:36px; }
+    .filters select{ font-size:1rem; }
+  }
+</style>
+<!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
+</head>
+<body>
+<a class="ag-navlink back" href="index.html" style="font-family:'Fraunces',serif;font-size:0.86rem;color:var(--text);text-decoration:none;padding:0.4rem 0.9rem;border-radius:999px;border:1px solid var(--panel-line);background:rgba(22,26,46,0.7);">&larr; The table</a>
+<nav class="ag-nav" id="nav"></nav>
+
+<div class="wrap">
+  <div id="feedView">
+    <header>
+      <span class="eyebrow">ΑΓΟΡΑ</span>
+      <h1>The Agora</h1>
+      <p class="subhead">conversations people staged at the table and chose to share</p>
+    </header>
+    <div class="filters">
+      <select id="filterSel" aria-label="Filter by philosopher"><option value="">All philosophers</option></select>
+      <span class="count" id="count"></span>
+    </div>
+    <div id="qotd"></div>
+    <div id="feed"></div>
+    <button type="button" class="ag-btn more-btn" id="moreBtn" style="display:none;">Load more</button>
+  </div>
+
+  <div id="convoView" style="display:none;">
+    <p style="margin:0 0 1rem;"><a href="agora.html" id="backToFeed" style="font-family:'Fraunces',serif;color:var(--text-dim);">&larr; The Agora</a></p>
+    <div class="convo-head" id="convoHead"></div>
+    <div id="convoBody"></div>
+  </div>
+
+  <footer><a href="privacy.html">Privacy policy and community rules</a></footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="agora-core.js"></script>
+<script>
+// =====================================================================
+//  The Agora page: the feed of published conversations, and one
+//  conversation's page (agora.html?c=<id>). Read-only for now; votes and
+//  comments arrive in the next phases.
+// =====================================================================
+const A = window.agora;
+const PAGE = 20;                       // conversations loaded at a time
+let offset = 0, filterName = '';
+const nickCache = {};                  // author id -> nickname
+
+A.mountAccount(document.getElementById('nav'));
+
+// look up nicknames for a set of author ids (one request for the whole page)
+async function loadNicknames(ids){
+  const need = [...new Set(ids.filter(id => id && !(id in nickCache)))];
+  if(!need.length) return;
+  const { data } = await A.sb.from('profiles').select('id,nickname').in('id', need);
+  (data || []).forEach(p => { nickCache[p.id] = p.nickname; });
+}
+const authorName = c => c.is_qotd ? 'the Symposium' : (c.author ? (nickCache[c.author] || 'a member') : 'a former member');
+
+function facesRow(names, max){
+  const row = A.el('div', 'faces');
+  names.slice(0, max).forEach(n => row.appendChild(A.face(n)));
+  if(names.length > max) row.appendChild(A.el('span', 'more', '+' + (names.length - max)));
+  return row;
+}
+
+function card(c, label){
+  const a = A.el('a', 'card' + (label ? ' qotd' : '')); a.href = 'agora.html?c=' + c.id;
+  if(label) a.appendChild(A.el('p', 'label', label));
+  a.appendChild(A.el('p', 'q', c.question));
+  const meta = A.el('div', 'meta');
+  meta.appendChild(facesRow(c.seated || [], 8));
+  meta.appendChild(A.el('span', 'byline', 'by ' + authorName(c) + ' · ' + A.when(c.created_at)));
+  a.appendChild(meta);
+  return a;
+}
+
+// ---------- the feed ----------
+async function loadQotd(){
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await A.sb.from('conversations').select('*').eq('is_qotd', true).eq('qotd_date', today).limit(1);
+  const slot = document.getElementById('qotd'); slot.innerHTML = '';
+  if(data && data[0]) slot.appendChild(card(data[0], 'Question of the Day'));
+}
+async function loadFeed(reset){
+  const feed = document.getElementById('feed'), more = document.getElementById('moreBtn');
+  if(reset){ offset = 0; feed.innerHTML = ''; }
+  let q = A.sb.from('conversations').select('*').eq('is_qotd', false).order('created_at', { ascending: false }).range(offset, offset + PAGE - 1);
+  if(filterName) q = q.contains('seated', [filterName]);
+  const { data, error } = await q;
+  if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
+  await loadNicknames(data.map(c => c.author));
+  data.forEach(c => feed.appendChild(card(c)));
+  offset += data.length;
+  more.style.display = data.length === PAGE ? 'block' : 'none';
+  if(reset && !data.length){
+    const e = A.el('div', 'empty');
+    e.innerHTML = filterName
+      ? 'No published conversations with ' + filterName.replace(/[<&>]/g, '') + ' yet.'
+      : 'The Agora is quiet so far.<br><a href="index.html">Stage a conversation at the table</a> and publish it to be the first.';
+    feed.appendChild(e);
+  }
+  document.getElementById('count').textContent = offset ? (offset + (data.length === PAGE ? '+' : '') + ' conversation' + (offset === 1 ? '' : 's')) : '';
+}
+
+// ---------- one conversation ----------
+async function showConversation(id){
+  document.getElementById('feedView').style.display = 'none';
+  document.getElementById('convoView').style.display = 'block';
+  const head = document.getElementById('convoHead'), body = document.getElementById('convoBody');
+  const [c, l, k] = await Promise.all([
+    A.sb.from('conversations').select('*').eq('id', id).maybeSingle(),
+    A.sb.from('lines').select('*').eq('conversation_id', id).order('position', { ascending: true }),
+    A.sb.from('checkpoints').select('*').eq('conversation_id', id).order('after_position', { ascending: true })
+  ]);
+  if(c.error || !c.data){
+    head.appendChild(A.el('p', 'note', c.error ? A.plainError(c.error) : 'This conversation isn’t available. It may have been removed.'));
+    return;
+  }
+  const conv = c.data;
+  A.track('agora-conversation-opened');
+  document.title = conv.question + ' · The Agora';
+  await loadNicknames([conv.author]);
+  head.appendChild(A.el('p', 'q', conv.question));
+  head.appendChild(A.el('span', 'byline', 'published by ' + authorName(conv) + ' · ' + A.when(conv.created_at) + (conv.model ? ' · written by ' + conv.model : '')));
+  head.appendChild(facesRow(conv.seated || [], 12));
+
+  // actions: reopen it at the 3D table, copy the link, delete (author or admin)
+  const actions = A.el('div', 'actions');
+  const seat = A.el('a', 'ag-btn primary', 'Seat this table'); seat.href = 'index.html?agora=' + conv.id;
+  const copy = A.el('button', 'ag-btn', 'Copy link'); copy.type = 'button';
+  copy.onclick = async () => { try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch(e){ copy.textContent = 'Copy the address bar'; } setTimeout(() => copy.textContent = 'Copy link', 2000); A.track('agora-link-copied'); };
+  actions.append(seat, copy);
+  const del = A.el('button', 'ag-btn danger', 'Delete'); del.type = 'button'; del.style.display = 'none';
+  actions.appendChild(del);
+  head.appendChild(actions);
+  const confirmBox = A.el('div', 'delete-confirm');
+  confirmBox.appendChild(A.el('div', null, 'Delete this conversation from the Agora for good?'));
+  const yes = A.el('button', 'ag-btn danger', 'Yes, delete'); yes.type = 'button';
+  const no = A.el('button', 'ag-btn', 'Keep it'); no.type = 'button';
+  confirmBox.append(yes, no); head.appendChild(confirmBox);
+  const showDelete = () => { del.style.display = (A.user && (A.user.id === conv.author || (A.profile && A.profile.is_admin))) ? '' : 'none'; };
+  showDelete(); A.onChange(showDelete);
+  del.onclick = () => { confirmBox.style.display = 'block'; };
+  no.onclick = () => { confirmBox.style.display = 'none'; };
+  yes.onclick = async () => {
+    const { error } = await A.sb.from('conversations').delete().eq('id', conv.id);
+    if(error){ confirmBox.firstChild.textContent = A.plainError(error); return; }
+    A.track('agora-conversation-deleted');
+    location.href = 'agora.html';
+  };
+
+  // the transcript, with each checkpoint placed after the line it followed
+  const lines = l.data || [], checks = k.data || [];
+  const human = authorName(conv);
+  lines.forEach(line => {
+    const row = A.el('div', 'line' + (line.speaker === 'You' ? ' human' : ''));
+    row.appendChild(A.face(line.speaker === 'You' ? human : line.speaker));
+    const col = A.el('div');
+    const who = A.el('p', 'who', line.speaker === 'You' ? human + ' (at the table)' : line.speaker);
+    if(line.to_speaker){ const t = A.el('span', 'to', ' → ' + (line.to_speaker === 'You' ? human : line.to_speaker)); who.appendChild(t); }
+    col.appendChild(who);
+    if(line.re) col.appendChild(A.el('p', 're', 'answering: ' + line.re));
+    col.appendChild(A.el('p', 'body', line.body));
+    row.appendChild(col); body.appendChild(row);
+    checks.filter(x => x.after_position === line.position).forEach((x, i) => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
+  });
+  checks.filter(x => x.after_position > lines.length).forEach(x => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
+}
+function checkpointCard(x, n){
+  const box = A.el('div', 'checkpoint');
+  box.appendChild(A.el('p', 't', n > 1 ? 'Where the table stood · checkpoint ' + n : 'Where the table stood'));
+  [['Where they met', x.agreed], ['Where they split', x.split], ['What shifted', x.shifted]].forEach(([label, v]) => {
+    if(!v) return; box.appendChild(A.el('p', 'l', label)); box.appendChild(A.el('p', 'v', v));
+  });
+  if(x.open_question){ box.appendChild(A.el('p', 'l', 'Left open')); box.appendChild(A.el('blockquote', null, x.open_question)); }
+  return box;
+}
+
+// ---------- start ----------
+const sel = document.getElementById('filterSel');
+A.PHILOSOPHERS.slice().sort().forEach(n => { const o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o); });
+sel.addEventListener('change', () => { filterName = sel.value; A.track('agora-filter', { name: filterName || 'all' }); loadFeed(true); });
+document.getElementById('moreBtn').addEventListener('click', () => loadFeed(false));
+
+if(A.offline){
+  document.getElementById('feed').appendChild(A.el('p', 'note', 'The Agora couldn’t load. Check your connection and refresh.'));
+} else {
+  const id = new URLSearchParams(location.search).get('c');
+  if(id) showConversation(id);
+  else { A.track('agora-viewed'); loadQotd(); loadFeed(true); }
+}
+</script>
+</body>
+</html>
