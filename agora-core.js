@@ -98,41 +98,111 @@
   A.modal = modal;
 
   // ---------- sign in ----------
+  // Which sign-in buttons to show: asks Supabase which providers are switched on,
+  // so a Google/Facebook button only appears once it's set up in the dashboard.
+  let providersP = null;
+  function enabledProviders(){
+    if(!providersP) providersP = fetch(SUPABASE_URL + '/auth/v1/settings', { headers: { apikey: SUPABASE_KEY } })
+      .then(r => r.ok ? r.json() : {}).then(j => (j && j.external) || {}).catch(() => ({}));
+    return providersP;
+  }
+  const PROVIDER_NAMES = { google: 'Google', facebook: 'Facebook' };
+
+  // Google/Facebook sign-in runs in a small popup window, so the page underneath
+  // (and any unpublished conversation on it) stays exactly where it was.
+  async function signInWith(provider, msg){
+    const popup = window.open('', 'agora-signin', 'width=520,height=680');   // opened right away, or browsers block it
+    const { data, error } = await sb.auth.signInWithOAuth({ provider,
+      options: { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'signed-in.html', skipBrowserRedirect: true } });
+    if(error || !data || !data.url){ if(popup) popup.close(); msg.textContent = plainError(error || 'Sign-in is not available right now.'); msg.className = 'ag-msg bad'; return; }
+    track('signin-provider', { provider });
+    if(popup && !popup.closed){ popup.location.href = data.url; msg.textContent = 'Finish signing in in the window that opened…'; msg.className = 'ag-msg'; return; }
+    // popups blocked: sign in in this tab instead, and come back to this page afterwards
+    const r = await sb.auth.signInWithOAuth({ provider, options: { redirectTo: location.href.split('#')[0] } });
+    if(r.error){ msg.textContent = plainError(r.error); msg.className = 'ag-msg bad'; }
+  }
+
   function openSignIn(why){
     track('signin-opened');
     modal((box, close) => {
+      // the box closes by itself as soon as sign-in finishes (in the popup or another tab)
+      const watch = () => { if(A.user && box.isConnected) close(); };
+      listeners.push(watch);
       box.appendChild(el('p', 'ag-modal-title', 'Sign in to the Agora'));
       box.appendChild(el('p', 'ag-modal-lead', why || 'Reading is open to everyone. Sign in to publish, and soon to vote and comment.'));
-      const form = el('form', 'ag-form');
-      const email = el('input'); email.type = 'email'; email.required = true; email.placeholder = 'Your email'; email.autocomplete = 'email';
-      const nick = el('input'); nick.type = 'text'; nick.placeholder = 'Nickname shown publicly (optional)'; nick.maxLength = 30;
       const ageRow = el('label', 'ag-check'); const age = el('input'); age.type = 'checkbox';
       ageRow.appendChild(age); ageRow.appendChild(document.createTextNode(" I'm 13 or older and agree to the "));
       const rules = el('a', null, 'privacy policy and community rules'); rules.href = 'privacy.html'; rules.target = '_blank';
       ageRow.appendChild(rules);
-      const go = el('button', 'ag-btn primary', 'Email me a sign-in link'); go.type = 'submit';
+      box.appendChild(ageRow);
       const msg = el('p', 'ag-msg');
-      form.append(email, nick, ageRow, go, msg);
+      const needAge = () => { if(age.checked) return true; msg.textContent = 'Please confirm you’re 13 or older.'; msg.className = 'ag-msg bad'; return false; };
+
+      // Google / Facebook buttons (only the ones switched on in Supabase)
+      const social = el('div', 'ag-social'); box.appendChild(social);
+      enabledProviders().then(on => {
+        ['google', 'facebook'].filter(p => on[p]).forEach(p => {
+          const b = el('button', 'ag-btn ag-provider ag-' + p, 'Continue with ' + PROVIDER_NAMES[p]); b.type = 'button';
+          b.onclick = () => { if(needAge()) signInWith(p, msg); };
+          social.appendChild(b);
+        });
+        if(social.children.length) social.appendChild(el('p', 'ag-or', 'or get a sign-in link by email'));
+      });
+
+      // email link
+      const form = el('form', 'ag-form');
+      const email = el('input'); email.type = 'email'; email.required = true; email.placeholder = 'Your email'; email.autocomplete = 'email';
+      const go = el('button', 'ag-btn', 'Email me a sign-in link'); go.type = 'submit';
+      form.append(email, go);
       form.addEventListener('submit', async e => {
         e.preventDefault(); msg.className = 'ag-msg';
-        if(!age.checked){ msg.textContent = 'Please confirm you’re 13 or older.'; msg.classList.add('bad'); return; }
-        const n = nick.value.trim();
-        if(n && (n.length < 2 || n.length > 30)){ msg.textContent = 'Nicknames are 2 to 30 characters.'; msg.classList.add('bad'); return; }
+        if(!needAge()) return;
         go.disabled = true; go.textContent = 'Sending…';
         const { error } = await sb.auth.signInWithOtp({ email: email.value.trim(),
-          options: { emailRedirectTo: location.origin + location.pathname + location.search, data: n ? { nickname: n } : undefined } });
+          options: { emailRedirectTo: location.origin + location.pathname + location.search } });
         go.disabled = false; go.textContent = 'Email me a sign-in link';
-        if(error){ msg.textContent = plainError(error); msg.classList.add('bad'); return; }
+        if(error){ msg.textContent = plainError(error); msg.className = 'ag-msg bad'; return; }
         track('signin-email-sent');
-        form.replaceWith(Object.assign(el('div', 'ag-sent'), { innerHTML: '' }));
-        const sent = box.querySelector('.ag-sent');
+        const sent = el('div', 'ag-sent');
         sent.appendChild(el('p', 'ag-modal-lead', 'Check your inbox at ' + email.value.trim() + '.'));
         sent.appendChild(el('p', 'ag-modal-lead', 'The link signs you in. If it opens a new tab, you can come back to this one: it will notice you’re signed in.'));
         const ok = el('button', 'ag-btn', 'Done'); ok.type = 'button'; ok.onclick = close; sent.appendChild(ok);
+        form.replaceWith(sent); social.remove();
+      });
+      box.appendChild(form);
+      box.appendChild(msg);
+    });
+  }
+
+  // First sign-in: everyone starts as "thinker-xxxxxx" (we never show the name Google or
+  // Facebook shares), so ask once for the nickname they want shown publicly.
+  function openPickNickname(){
+    modal((box, close) => {
+      box.appendChild(el('p', 'ag-modal-title', 'Pick a nickname'));
+      box.appendChild(el('p', 'ag-modal-lead', 'This is the only name shown on what you publish. Your real name and email stay private.'));
+      const form = el('form', 'ag-form');
+      const nick = el('input'); nick.type = 'text'; nick.maxLength = 30; nick.placeholder = 'e.g. Socratic Sam';
+      const save = el('button', 'ag-btn primary', 'Save'); save.type = 'submit';
+      const later = el('button', 'ag-btn', 'Keep ' + ((A.profile && A.profile.nickname) || 'it')); later.type = 'button'; later.onclick = close;
+      const msg = el('p', 'ag-msg');
+      form.append(nick, save, later, msg);
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const v = nick.value.trim();
+        if(v.length < 2 || v.length > 30){ msg.textContent = 'Nicknames are 2 to 30 characters.'; msg.className = 'ag-msg bad'; return; }
+        const { error } = await sb.from('profiles').update({ nickname: v }).eq('id', A.user.id);
+        if(error){ msg.textContent = plainError(error); msg.className = 'ag-msg bad'; return; }
+        track('nickname-picked'); close(); refresh();
       });
       box.appendChild(form);
     });
   }
+  listeners.push(a => {
+    if(window.AGORA_NO_PROMPT || !a.user || !a.profile || !/^thinker-/.test(a.profile.nickname)) return;
+    const key = 'agora-nick-asked-' + a.user.id;
+    try { if(localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch(e){}
+    setTimeout(() => { if(!document.querySelector('.ag-modal-back')) openPickNickname(); else setTimeout(openPickNickname, 1500); }, 400);
+  });
   A.openSignIn = openSignIn;
   // returns true if signed in; otherwise opens the sign-in box and returns false
   A.requireSignIn = why => { if(A.user) return true; openSignIn(why); return false; };

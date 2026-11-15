@@ -9181,7 +9181,7 @@ async function publishConversation(){
   const ag = await window.agoraLoad;
   if(!ag || ag.offline){ status.textContent = "The Agora couldn't load. Check your connection and refresh."; return; }
   await ag.ready;
-  if(!ag.requireSignIn('Sign in to publish. After you click the link in the email, come back to this tab and press Publish again. Your conversation stays here.')) return;
+  if(!ag.requireSignIn('Sign in to publish. Your conversation stays right here while you do; press Publish again once you\u2019re in.')) return;
   if(ag.profile && ag.profile.is_banned){ status.textContent = 'This account can no longer publish.'; return; }
   if(!(await confirmPublish(ag))) return;
   const btn = document.getElementById('publishLink');

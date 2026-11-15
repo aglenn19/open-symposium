@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signed in · The Symposium</title>
+<link rel="stylesheet" href="agora.css">
+<style>
+  html, body{ margin:0; height:100%; background: var(--ink); color: var(--text); }
+  body{ display:flex; align-items:center; justify-content:center; text-align:center; font-family: Georgia, serif; padding:1rem; }
+  p{ color: var(--text-dim); font-style: italic; }
+  a{ color: var(--thread); }
+</style>
+</head>
+<body>
+<!-- Google/Facebook send people here after they sign in (inside the popup window).
+     This page saves the sign-in, then closes itself; the page that opened it notices. -->
+<div><h2 style="font-weight:400;">Signing you in&hellip;</h2><p id="msg"></p></div>
+<script>window.AGORA_NO_PROMPT = true;   // the nickname question is asked on the main page, not here</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="agora-core.js"></script>
+<script>
+(async () => {
+  const msg = document.getElementById('msg'), h = document.querySelector('h2');
+  const A = window.agora;
+  if(!A || A.offline){ h.textContent = 'Something went wrong'; msg.innerHTML = 'Close this window and try again.'; return; }
+  // wait (up to ~6 seconds) for the sign-in from the address bar to be saved
+  for(let i = 0; i < 30 && !A.user; i++){ await A.refresh(); if(!A.user) await new Promise(r => setTimeout(r, 200)); }
+  if(!A.user){
+    const err = new URLSearchParams(location.hash.slice(1) || location.search).get('error_description');
+    h.textContent = 'Sign-in didn’t finish';
+    msg.textContent = err ? err.replace(/\+/g, ' ') : 'Close this window and try again.';
+    return;
+  }
+  h.textContent = 'You’re signed in';
+  if(window.opener && !window.opener.closed){ msg.textContent = 'This window will close.'; setTimeout(() => window.close(), 700); }
+  else { msg.innerHTML = 'Taking you to <a href="agora.html">the Agora</a>…'; setTimeout(() => { location.href = 'agora.html'; }, 900); }
+})();
+</script>
+</body>
+</html>
