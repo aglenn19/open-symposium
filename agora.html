@@ -74,6 +74,38 @@
     .line .ag-face{ width:36px; height:36px; }
     .filters select{ font-size:1rem; }
   }
+
+  /* votes on lines */
+  .votes{ display:flex; gap:0.45rem; margin-top:0.55rem; flex-wrap:wrap; align-items:center; }
+  .vote{ font-family:'Space Grotesk', sans-serif; font-size:0.8rem; padding:0.3rem 0.75rem; border-radius:999px; cursor:pointer;
+    border:1px solid var(--panel-line); background:transparent; color: var(--text-dim); }
+  .vote .n{ margin-left:0.35rem; color: var(--text); font-variant-numeric: tabular-nums; }
+  .vote.agree.on{ border-color: rgba(127,184,143,0.6); background: rgba(127,184,143,0.14); color: var(--good); }
+  .vote.disagree.on{ border-color: rgba(224,138,122,0.6); background: rgba(224,138,122,0.12); color: var(--bad); }
+  @media (hover:hover) and (pointer:fine){ .vote:hover{ border-color: var(--thread-dim); } }
+  .split{ flex:1; min-width:60px; max-width:140px; height:4px; border-radius:2px; background: rgba(224,138,122,0.5); overflow:hidden; }
+  .split i{ display:block; height:100%; background: var(--good); }
+  /* feed extras */
+  .sortsel{ margin-left:0.4rem; }
+  .card .stat{ font-family:'Fraunces', serif; font-style:italic; font-size:0.84rem; color: var(--thread); }
+  .card .from{ font-family:'Fraunces', serif; font-style:italic; font-size:0.84rem; color: var(--text-dim); margin:-0.45rem 0 0.6rem; }
+  a.who-link{ color: inherit; text-decoration: underline; text-decoration-color: var(--panel-line); text-underline-offset: 3px; }
+  .join-hint{ text-align:center; font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.88rem; margin:-1rem 0 1.6rem; }
+  .continued{ text-align:center; margin:-0.6rem 0 1.4rem; font-family:'Fraunces', serif; font-style:italic; font-size:0.9rem; color: var(--text-dim); }
+  .continued a{ color: var(--thread); }
+  .branches{ margin-top:2rem; }
+  .section-t{ font-family:'Fraunces', serif; letter-spacing:0.14em; text-transform:uppercase; font-size:0.72rem; color: var(--thread); margin:0 0 0.8rem; }
+  /* profile */
+  .prof-head{ text-align:center; margin: 0.6rem 0 2rem; }
+  .prof-head h1{ margin-bottom:0.2rem; }
+  .fp{ padding:1.1rem 1.2rem; border-radius:14px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); margin-bottom:2rem; }
+  .fp-sum{ font-family:'Fraunces', serif; font-size:1.05rem; line-height:1.5; margin:0 0 1rem; }
+  .fp-row{ display:flex; align-items:center; gap:0.7rem; margin:0.45rem 0; }
+  .fp-row .nm{ font-family:'Fraunces', serif; width:9rem; flex-shrink:0; }
+  .fp-row .bar{ flex:1; height:8px; border-radius:4px; background: rgba(224,138,122,0.45); overflow:hidden; }
+  .fp-row .bar i{ display:block; height:100%; background: var(--good); }
+  .fp-row .ct{ font-size:0.78rem; color: var(--text-dim); width:5.5rem; text-align:right; flex-shrink:0; font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px){ .fp-row .nm{ width:6.5rem; font-size:0.9rem; } .fp-row .ct{ width:4.6rem; } }
 </style>
 <!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
 <script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
@@ -90,7 +122,8 @@
       <p class="subhead">conversations people staged at the table and chose to share</p>
     </header>
     <div class="filters">
-      <select id="filterSel" aria-label="Filter by philosopher"><option value="">All philosophers</option></select>
+      <span><select id="filterSel" aria-label="Filter by philosopher"><option value="">All philosophers</option></select>
+      <select id="sortSel" class="sortsel" aria-label="Sort"><option value="new">Newest</option><option value="votes">Most votes</option></select></span>
       <span class="count" id="count"></span>
     </div>
     <div id="qotd"></div>
@@ -104,6 +137,11 @@
     <div id="convoBody"></div>
   </div>
 
+  <div id="profileView" style="display:none;">
+    <p style="margin:0 0 1rem;"><a href="agora.html" class="ag-pill">&larr; All conversations</a></p>
+    <div id="profileBody"></div>
+  </div>
+
   <footer><a href="privacy.html">Privacy policy and community rules</a></footer>
 </div>
 
@@ -111,18 +149,19 @@
 <script src="agora-core.js"></script>
 <script>
 // =====================================================================
-//  The Agora page: the feed of published conversations, and one
-//  conversation's page (agora.html?c=<id>). Read-only for now; votes and
-//  comments arrive in the next phases.
+//  The Agora page. Three views on one page:
+//    agora.html            → the feed of published conversations
+//    agora.html?c=<id>     → one conversation (votes, "Join this table")
+//    agora.html?u=<id>     → a member's profile (their tables + fingerprint)
 // =====================================================================
 const A = window.agora;
 const PAGE = 20;                       // conversations loaded at a time
-let offset = 0, filterName = '';
+let offset = 0, filterName = '', sortBy = 'new', votedIds = null;
 const nickCache = {};                  // author id -> nickname
 
 A.mountAccount(document.getElementById('nav'));
 
-// look up nicknames for a set of author ids (one request for the whole page)
+// ---------- small helpers ----------
 async function loadNicknames(ids){
   const need = [...new Set(ids.filter(id => id && !(id in nickCache)))];
   if(!need.length) return;
@@ -130,23 +169,40 @@ async function loadNicknames(ids){
   (data || []).forEach(p => { nickCache[p.id] = p.nickname; });
 }
 const authorName = c => c.is_qotd ? 'the Symposium' : (c.author ? (nickCache[c.author] || 'a member') : 'a former member');
-
+// the author's name as a link to their profile (plain text for former members / Question of the Day)
+function authorEl(c){
+  if(c.is_qotd || !c.author) return document.createTextNode(authorName(c));
+  const a = A.el('a', 'who-link', authorName(c)); a.href = 'agora.html?u=' + c.author;
+  a.addEventListener('click', e => e.stopPropagation());
+  return a;
+}
+// vote counts for a set of conversations: { id: votes }
+async function voteCounts(ids){
+  if(!ids.length) return {};
+  const { data } = await A.sb.from('conversation_activity').select('conversation_id,votes').in('conversation_id', ids);
+  const out = {}; (data || []).forEach(r => { out[r.conversation_id] = r.votes; }); return out;
+}
 function facesRow(names, max){
   const row = A.el('div', 'faces');
   names.slice(0, max).forEach(n => row.appendChild(A.face(n)));
   if(names.length > max) row.appendChild(A.el('span', 'more', '+' + (names.length - max)));
   return row;
 }
-
-function card(c, label){
+function card(c, label, votes){
   const a = A.el('a', 'card' + (label ? ' qotd' : '')); a.href = 'agora.html?c=' + c.id;
   if(label) a.appendChild(A.el('p', 'label', label));
   a.appendChild(A.el('p', 'q', c.question));
+  if(c.continued_from) a.appendChild(A.el('p', 'from', 'a continued conversation'));
   const meta = A.el('div', 'meta');
   meta.appendChild(facesRow(c.seated || [], 8));
-  meta.appendChild(A.el('span', 'byline', 'by ' + authorName(c) + ' · ' + A.when(c.created_at)));
+  if(votes) meta.appendChild(A.el('span', 'stat', votes + ' vote' + (votes === 1 ? '' : 's')));
+  const by = A.el('span', 'byline'); by.append('by ', authorEl(c), ' · ' + A.when(c.created_at));
+  meta.appendChild(by);
   a.appendChild(meta);
   return a;
+}
+function show(view){
+  ['feedView', 'convoView', 'profileView'].forEach(v => { document.getElementById(v).style.display = v === view ? 'block' : 'none'; });
 }
 
 // ---------- the feed ----------
@@ -154,33 +210,106 @@ async function loadQotd(){
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await A.sb.from('conversations').select('*').eq('is_qotd', true).eq('qotd_date', today).limit(1);
   const slot = document.getElementById('qotd'); slot.innerHTML = '';
-  if(data && data[0]) slot.appendChild(card(data[0], 'Question of the Day'));
+  if(data && data[0]){ const v = await voteCounts([data[0].id]); slot.appendChild(card(data[0], 'Question of the Day', v[data[0].id])); }
 }
 async function loadFeed(reset){
   const feed = document.getElementById('feed'), more = document.getElementById('moreBtn');
-  if(reset){ offset = 0; feed.innerHTML = ''; }
-  let q = A.sb.from('conversations').select('*').eq('is_qotd', false).order('created_at', { ascending: false }).range(offset, offset + PAGE - 1);
-  if(filterName) q = q.contains('seated', [filterName]);
-  const { data, error } = await q;
-  if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
-  await loadNicknames(data.map(c => c.author));
-  data.forEach(c => feed.appendChild(card(c)));
-  offset += data.length;
-  more.style.display = data.length === PAGE ? 'block' : 'none';
-  if(reset && !data.length){
+  if(reset){ offset = 0; feed.innerHTML = ''; votedIds = null; }
+  let rows = [], hasMore = false;
+  if(sortBy === 'votes'){
+    // most-voted first: take the 200 most-voted conversations, then show them a page at a time
+    if(!votedIds){
+      const { data } = await A.sb.from('conversation_activity').select('conversation_id,votes').order('votes', { ascending: false }).limit(200);
+      votedIds = (data || []).map(r => [r.conversation_id, r.votes]);
+    }
+    const slice = votedIds.slice(offset, offset + PAGE);
+    if(slice.length){
+      let q = A.sb.from('conversations').select('*').in('id', slice.map(x => x[0])).eq('is_qotd', false);
+      if(filterName) q = q.contains('seated', [filterName]);
+      const { data, error } = await q;
+      if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
+      const order = Object.fromEntries(slice.map((x, i) => [x[0], i]));
+      rows = (data || []).sort((a, b) => order[a.id] - order[b.id]);
+    }
+    hasMore = votedIds.length > offset + PAGE;
+    offset += slice.length;
+  } else {
+    let q = A.sb.from('conversations').select('*').eq('is_qotd', false).order('created_at', { ascending: false }).range(offset, offset + PAGE - 1);
+    if(filterName) q = q.contains('seated', [filterName]);
+    const { data, error } = await q;
+    if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
+    rows = data || []; hasMore = rows.length === PAGE; offset += rows.length;
+  }
+  await loadNicknames(rows.map(c => c.author));
+  const votes = await voteCounts(rows.map(c => c.id));
+  rows.forEach(c => feed.appendChild(card(c, null, votes[c.id])));
+  more.style.display = hasMore ? 'block' : 'none';
+  const shown = feed.querySelectorAll('.card').length;
+  if(reset && !shown){
     const e = A.el('div', 'empty');
-    e.innerHTML = filterName
-      ? 'No published conversations with ' + filterName.replace(/[<&>]/g, '') + ' yet.'
-      : 'The Agora is quiet so far.<br><a href="index.html">Stage a conversation at the table</a> and publish it to be the first.';
+    if(sortBy === 'votes' && !filterName) e.textContent = 'No votes yet. Open a conversation and agree or disagree with a line.';
+    else if(filterName){ e.textContent = 'No published conversations with ' + filterName + (sortBy === 'votes' ? ' have votes yet.' : ' yet.'); }
+    else e.innerHTML = 'The Agora is quiet so far.<br><a href="index.html">Stage a conversation at the table</a> and publish it to be the first.';
     feed.appendChild(e);
   }
-  document.getElementById('count').textContent = offset ? (offset + (data.length === PAGE ? '+' : '') + ' conversation' + (offset === 1 ? '' : 's')) : '';
+  document.getElementById('count').textContent = shown ? (shown + (hasMore ? '+' : '') + ' conversation' + (shown === 1 ? '' : 's')) : '';
+}
+
+// ---------- votes on a conversation's lines ----------
+const lineVotes = {};     // line id -> { agrees, disagrees, mine }
+async function loadVotes(lineIds){
+  lineIds.forEach(id => { lineVotes[id] = { agrees: 0, disagrees: 0, mine: '' }; });
+  if(!lineIds.length) return;
+  const { data } = await A.sb.from('line_totals').select('*').in('line_id', lineIds);
+  (data || []).forEach(r => { Object.assign(lineVotes[r.line_id], { agrees: +r.agrees, disagrees: +r.disagrees }); });
+  await loadMyVotes(lineIds);
+}
+async function loadMyVotes(lineIds){
+  lineIds.forEach(id => { if(lineVotes[id]) lineVotes[id].mine = ''; });
+  if(!A.user || !lineIds.length) return;
+  const { data } = await A.sb.from('votes').select('line_id,kind').in('line_id', lineIds).eq('voter', A.user.id);
+  (data || []).forEach(r => { if(lineVotes[r.line_id]) lineVotes[r.line_id].mine = r.kind; });
+}
+function voteRow(lineId){
+  const row = A.el('div', 'votes'); row.dataset.line = lineId;
+  const agree = A.el('button', 'vote agree'); agree.type = 'button';
+  const disagree = A.el('button', 'vote disagree'); disagree.type = 'button';
+  const split = A.el('span', 'split'); const fill = A.el('i'); split.appendChild(fill);
+  row.append(agree, disagree, split);
+  const paint = () => {
+    const v = lineVotes[lineId];
+    agree.innerHTML = 'Agree<span class="n"></span>'; agree.querySelector('.n').textContent = v.agrees || '';
+    disagree.innerHTML = 'Disagree<span class="n"></span>'; disagree.querySelector('.n').textContent = v.disagrees || '';
+    agree.classList.toggle('on', v.mine === 'agree'); disagree.classList.toggle('on', v.mine === 'disagree');
+    const total = v.agrees + v.disagrees;
+    split.style.display = total ? '' : 'none'; fill.style.width = total ? (100 * v.agrees / total) + '%' : '0';
+    split.title = total ? Math.round(100 * v.agrees / total) + '% agree' : '';
+  };
+  row.__paint = paint; paint();
+  const cast = async kind => {
+    if(!A.requireSignIn('Sign in to vote. Votes are anonymous: people see the totals, never who voted.')) return;
+    const v = lineVotes[lineId], before = { ...v };
+    // update the screen right away, then save
+    if(v.mine === kind){ v.mine = ''; v[kind + 's']--; }
+    else { if(v.mine) v[v.mine + 's']--; v.mine = kind; v[kind + 's']++; }
+    paint();
+    let r;
+    if(!v.mine) r = await A.sb.from('votes').delete().eq('line_id', lineId).eq('voter', A.user.id);
+    else if(before.mine) r = await A.sb.from('votes').update({ kind }).eq('line_id', lineId).eq('voter', A.user.id);
+    else r = await A.sb.from('votes').insert({ line_id: lineId, kind });
+    if(r.error){ Object.assign(v, before); paint(); alertLine(row, A.plainError(r.error)); return; }
+    A.track('agora-vote', { kind: v.mine || 'removed' });
+  };
+  agree.onclick = () => cast('agree'); disagree.onclick = () => cast('disagree');
+  return row;
+}
+function alertLine(row, text){
+  const m = A.el('span', 'ag-msg bad', text); row.appendChild(m); setTimeout(() => m.remove(), 4000);
 }
 
 // ---------- one conversation ----------
 async function showConversation(id){
-  document.getElementById('feedView').style.display = 'none';
-  document.getElementById('convoView').style.display = 'block';
+  show('convoView');
   const head = document.getElementById('convoHead'), body = document.getElementById('convoBody');
   const [c, l, k] = await Promise.all([
     A.sb.from('conversations').select('*').eq('id', id).maybeSingle(),
@@ -194,27 +323,41 @@ async function showConversation(id){
   const conv = c.data;
   A.track('agora-conversation-opened');
   document.title = conv.question + ' · The Agora';
-  await loadNicknames([conv.author]);
+  // the original it continues, and any conversations that continue it
+  const [orig, branches] = await Promise.all([
+    conv.continued_from ? A.sb.from('conversations').select('id,question,author,is_qotd').eq('id', conv.continued_from).maybeSingle() : Promise.resolve({ data: null }),
+    A.sb.from('conversations').select('*').eq('continued_from', conv.id).order('created_at', { ascending: false }).limit(20)
+  ]);
+  await loadNicknames([conv.author, orig.data && orig.data.author, ...(branches.data || []).map(b => b.author)].filter(Boolean));
+
   head.appendChild(A.el('p', 'q', conv.question));
-  head.appendChild(A.el('span', 'byline', 'published by ' + authorName(conv) + ' · ' + A.when(conv.created_at) + (conv.model ? ' · written by ' + conv.model : '')));
+  const by = A.el('span', 'byline');
+  by.append('published by ', authorEl(conv), ' · ' + A.when(conv.created_at) + (conv.model ? ' · written by ' + conv.model : ''));
+  head.appendChild(by);
+  if(conv.continued_from){
+    const p = A.el('p', 'continued');
+    if(orig.data){ const a = A.el('a', null, 'a table by ' + authorName(orig.data)); a.href = 'agora.html?c=' + orig.data.id; p.append('continued from ', a); }
+    else p.textContent = 'continued from a conversation that’s no longer up';
+    head.appendChild(p);
+  }
   head.appendChild(facesRow(conv.seated || [], 12));
 
-  // actions: reopen it at the 3D table, copy the link, delete (author or admin)
+  // actions: join it at the 3D table, copy the link, delete (author or admin)
   const actions = A.el('div', 'actions');
-  const seat = A.el('a', 'ag-btn primary', 'Seat this table'); seat.href = 'index.html?agora=' + conv.id;
+  const seat = A.el('a', 'ag-btn primary', 'Join this table'); seat.href = 'index.html?agora=' + conv.id;
+  seat.addEventListener('click', () => A.track('agora-join-clicked'));
   const copy = A.el('button', 'ag-btn', 'Copy link'); copy.type = 'button';
   copy.onclick = async () => { try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch(e){ copy.textContent = 'Copy the address bar'; } setTimeout(() => copy.textContent = 'Copy link', 2000); A.track('agora-link-copied'); };
   actions.append(seat, copy);
   const del = A.el('button', 'ag-btn danger', 'Delete'); del.type = 'button'; del.style.display = 'none';
   actions.appendChild(del);
   head.appendChild(actions);
+  head.appendChild(A.el('p', 'join-hint', 'Join in at the 3D table: keep the conversation going or add your own voice, with your own AI.'));
   const confirmBox = A.el('div', 'delete-confirm');
   confirmBox.appendChild(A.el('div', null, 'Delete this conversation from the Agora for good?'));
   const yes = A.el('button', 'ag-btn danger', 'Yes, delete'); yes.type = 'button';
   const no = A.el('button', 'ag-btn', 'Keep it'); no.type = 'button';
   confirmBox.append(yes, no); head.appendChild(confirmBox);
-  const showDelete = () => { del.style.display = (A.user && (A.user.id === conv.author || (A.profile && A.profile.is_admin))) ? '' : 'none'; };
-  showDelete(); A.onChange(showDelete);
   del.onclick = () => { confirmBox.style.display = 'block'; };
   no.onclick = () => { confirmBox.style.display = 'none'; };
   yes.onclick = async () => {
@@ -226,20 +369,39 @@ async function showConversation(id){
 
   // the transcript, with each checkpoint placed after the line it followed
   const lines = l.data || [], checks = k.data || [];
+  await loadVotes(lines.filter(x => x.speaker !== 'You').map(x => x.id));
   const human = authorName(conv);
   lines.forEach(line => {
     const row = A.el('div', 'line' + (line.speaker === 'You' ? ' human' : ''));
     row.appendChild(A.face(line.speaker === 'You' ? human : line.speaker));
-    const col = A.el('div');
+    const col = A.el('div'); col.style.flex = '1';
     const who = A.el('p', 'who', line.speaker === 'You' ? human + ' (at the table)' : line.speaker);
-    if(line.to_speaker){ const t = A.el('span', 'to', ' → ' + (line.to_speaker === 'You' ? human : line.to_speaker)); who.appendChild(t); }
+    if(line.to_speaker){ who.appendChild(A.el('span', 'to', ' → ' + (line.to_speaker === 'You' ? human : line.to_speaker))); }
     col.appendChild(who);
     if(line.re) col.appendChild(A.el('p', 're', 'answering: ' + line.re));
     col.appendChild(A.el('p', 'body', line.body));
+    if(line.speaker !== 'You') col.appendChild(voteRow(line.id));
     row.appendChild(col); body.appendChild(row);
-    checks.filter(x => x.after_position === line.position).forEach((x, i) => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
+    checks.filter(x => x.after_position === line.position).forEach(x => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
   });
   checks.filter(x => x.after_position > lines.length).forEach(x => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
+
+  // conversations that grew out of this one
+  if((branches.data || []).length){
+    const sec = A.el('div', 'branches');
+    sec.appendChild(A.el('p', 'section-t', 'Continued at other tables'));
+    const v = await voteCounts(branches.data.map(b => b.id));
+    branches.data.forEach(b => sec.appendChild(card(b, null, v[b.id])));
+    body.appendChild(sec);
+  }
+
+  // signing in or out changes the Delete button and which votes are "yours"
+  const onAuth = async () => {
+    del.style.display = (A.user && (A.user.id === conv.author || (A.profile && A.profile.is_admin))) ? '' : 'none';
+    await loadMyVotes(Object.keys(lineVotes).map(Number));
+    document.querySelectorAll('.votes').forEach(r => r.__paint && r.__paint());
+  };
+  onAuth(); A.onChange(onAuth);
 }
 function checkpointCard(x, n){
   const box = A.el('div', 'checkpoint');
@@ -251,17 +413,76 @@ function checkpointCard(x, n){
   return box;
 }
 
+// ---------- a member's profile ----------
+async function showProfile(uid){
+  show('profileView');
+  const box = document.getElementById('profileBody');
+  const [p, convs, fp] = await Promise.all([
+    A.sb.from('profiles').select('id,nickname,created_at').eq('id', uid).maybeSingle(),
+    A.sb.from('conversations').select('*').eq('author', uid).order('created_at', { ascending: false }).limit(50),
+    A.sb.from('fingerprints').select('*').eq('voter', uid)
+  ]);
+  if(!p.data){ box.appendChild(A.el('p', 'note', 'This member isn’t here anymore.')); return; }
+  A.track('agora-profile-opened');
+  nickCache[uid] = p.data.nickname;
+  document.title = p.data.nickname + ' · The Agora';
+  const head = A.el('div', 'prof-head');
+  head.appendChild(A.el('span', 'eyebrow', 'MEMBER'));
+  head.appendChild(A.el('h1', null, p.data.nickname));
+  head.appendChild(A.el('p', 'subhead', 'joined ' + A.when(p.data.created_at)));
+  box.appendChild(head);
+
+  // the philosophical fingerprint: who they side with, who they push back on
+  const rows = (fp.data || []).map(r => ({ name: r.speaker, a: +r.agrees, d: +r.disagrees, t: +r.agrees + +r.disagrees }))
+    .filter(r => r.t > 0).sort((x, y) => y.t - x.t || y.a - x.a);
+  const f = A.el('div', 'fp');
+  f.appendChild(A.el('p', 'section-t', 'Philosophical fingerprint'));
+  if(!rows.length){
+    f.appendChild(A.el('p', 'fp-sum', 'No votes yet. Agree or disagree with lines in the Agora and this fills in.'));
+  } else {
+    const total = rows.reduce((s, r) => s + r.t, 0);
+    const scored = rows.filter(r => r.t >= 2);
+    const best = scored.slice().sort((x, y) => (y.a / y.t) - (x.a / x.t) || y.t - x.t)[0];
+    const worst = scored.slice().sort((x, y) => (y.d / y.t) - (x.d / x.t) || y.t - x.t)[0];
+    let sum = total + ' vote' + (total === 1 ? '' : 's') + ' across ' + rows.length + ' philosopher' + (rows.length === 1 ? '' : 's') + '.';
+    if(best && best.a > best.d) sum += ' Sides most with ' + best.name + ' (' + Math.round(100 * best.a / best.t) + '% agree).';
+    if(worst && worst !== best && worst.d > worst.a) sum += ' Pushes back hardest on ' + worst.name + ' (' + Math.round(100 * worst.d / worst.t) + '% disagree).';
+    f.appendChild(A.el('p', 'fp-sum', sum));
+    rows.slice(0, 12).forEach(r => {
+      const row = A.el('div', 'fp-row');
+      row.appendChild(A.face(r.name));
+      row.appendChild(A.el('span', 'nm', r.name));
+      const bar = A.el('span', 'bar'); const i = A.el('i'); i.style.width = (100 * r.a / r.t) + '%'; bar.appendChild(i);
+      bar.title = r.a + ' agree, ' + r.d + ' disagree';
+      row.appendChild(bar);
+      row.appendChild(A.el('span', 'ct', r.a + ' / ' + r.d));
+      f.appendChild(row);
+    });
+    f.appendChild(A.el('p', 'count', 'green = agree, red = disagree'));
+  }
+  box.appendChild(f);
+
+  // their published tables
+  box.appendChild(A.el('p', 'section-t', 'Published tables'));
+  const list = convs.data || [];
+  if(!list.length) box.appendChild(A.el('p', 'note', 'Nothing published yet.'));
+  const v = await voteCounts(list.map(c => c.id));
+  list.forEach(c => box.appendChild(card(c, null, v[c.id])));
+}
+
 // ---------- start ----------
-const sel = document.getElementById('filterSel');
+const sel = document.getElementById('filterSel'), sortSel = document.getElementById('sortSel');
 A.PHILOSOPHERS.slice().sort().forEach(n => { const o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o); });
 sel.addEventListener('change', () => { filterName = sel.value; A.track('agora-filter', { name: filterName || 'all' }); loadFeed(true); });
+sortSel.addEventListener('change', () => { sortBy = sortSel.value; A.track('agora-sort', { by: sortBy }); loadFeed(true); });
 document.getElementById('moreBtn').addEventListener('click', () => loadFeed(false));
 
 if(A.offline){
   document.getElementById('feed').appendChild(A.el('p', 'note', 'The Agora couldn’t load. Check your connection and refresh.'));
 } else {
-  const id = new URLSearchParams(location.search).get('c');
-  if(id) showConversation(id);
+  const params = new URLSearchParams(location.search);
+  if(params.get('c')) showConversation(params.get('c'));
+  else if(params.get('u')) showProfile(params.get('u'));
   else { A.track('agora-viewed'); loadQotd(); loadFeed(true); }
 }
 </script>

@@ -8988,6 +8988,7 @@ function castVote(entry, name, kind){
   const btn = document.getElementById('leaningsLink');
   btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
   if(document.getElementById('leaningsPanel').classList.contains('show')) renderLeanings();
+  syncAgoraVote(entry, prev, next);
 }
 function addVoteButtons(entry, body, name){
   const row = document.createElement('div'); row.className = 't-actions';
@@ -9112,11 +9113,11 @@ async function loadSharedFromHash(){
   try { data = await unpackConversation(location.hash.slice(3)); } catch(e){ console.error('bad share link', e); return; }
   if(!data || !data.q || !Array.isArray(data.t)) return;
   track('shared-link-opened');
-  replayConversation(data, 'A shared conversation. Ask your own below, or tap a face to hear them up close.');
+  replayConversation(data, 'A shared conversation. Keep it going, add your own voice below, or tap a face to hear them up close.');
 }
 // replays a finished conversation at the table: seats, transcript, threads and checkpoints
 // data = { q: question, s: [seated names], t: [[name, to, line, re]], ds: [[afterLine, checkpoint]] }
-function replayConversation(data, statusText){
+function replayConversation(data, statusText, opts){
   const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
   if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
   const turns = data.t.map(([name, to, line, re]) => re ? ({ name, to: to || null, line, re }) : ({ name, to: to || null, line }));
@@ -9138,11 +9139,46 @@ function replayConversation(data, statusText){
   });
   markLatestVerdict();
   document.getElementById('shareConvoLink').style.display = 'inline-block';
+  // you can join in: keep it going or add your voice (with your own AI)
+  continuedFrom = (opts && opts.agoraId) || null;
+  if(opts && opts.lineIds){
+    Array.from(document.querySelectorAll('#transcript .t-entry')).forEach((e, i) => { if(opts.lineIds[i] && e.dataset.name !== 'You') e.dataset.agoraLine = opts.lineIds[i]; });
+  }
+  document.getElementById('continueLink').style.display = 'inline-block';
+  document.getElementById('chimeInRow').style.display = 'flex';
 }
 
 // ---------- the Agora: publish this conversation, or reopen a published one ----------
 let viewingShared = false;     // true while showing someone else's conversation (shared link or Agora): no Publish button
 let published = null;          // { id, lines } once this conversation is published
+let continuedFrom = null;      // the Agora conversation this one continues (after joining a published table)
+
+// no AI connected yet: open the setup instead of failing quietly
+function needAIKey(){
+  if(getStoredApiKey()) return false;
+  document.getElementById('askStatus').textContent = 'Connect an AI to join in. It takes about two minutes.';
+  openSetup();
+  return true;
+}
+// the first time you add to someone else's conversation, it becomes yours to publish
+function joinTable(){
+  if(!viewingShared) return;
+  viewingShared = false; published = null;
+  track('joined-table', { fromAgora: !!continuedFrom });
+}
+// mirror a vote cast at the table onto the Agora (only for published lines, only when signed in)
+async function syncAgoraVote(entry, prev, next){
+  const lineId = Number(entry.dataset.agoraLine); if(!lineId) return;
+  const ag = await window.agoraLoad; if(!ag || ag.offline || !ag.user) return;
+  const t = () => ag.sb.from('votes');
+  let r;
+  if(!next) r = await t().delete().eq('line_id', lineId).eq('voter', ag.user.id);
+  else {
+    r = await t().insert({ line_id: lineId, kind: next });
+    if(r.error) r = await t().update({ kind: next }).eq('line_id', lineId).eq('voter', ag.user.id);  // already voted there
+  }
+  if(r && r.error) console.error('Agora vote not saved', r.error);
+}
 const cameFromSignIn = /access_token=/.test(location.hash);   // arrived from the emailed sign-in link
 
 function updatePublishButton(){
@@ -9161,7 +9197,8 @@ function confirmPublish(ag){
       box.appendChild(ag.el('p', 'ag-modal-title', published ? 'Publish the update?' : 'Publish to the Agora?'));
       const lead = ag.el('p', 'ag-modal-lead');
       lead.innerHTML = 'Anyone can read it. It will show as published by <b></b>.' +
-        (published ? ' The new version replaces the one already up.' : '') + ' Keep it civil: argue with ideas, not people.';
+        (published ? ' The new version replaces the one already up.' : '') +
+        (continuedFrom ? ' It will link back to the table you joined.' : '') + ' Keep it civil: argue with ideas, not people.';
       lead.querySelector('b').textContent = (ag.profile && ag.profile.nickname) || 'you';
       box.appendChild(lead);
       const row = ag.el('div', 'ag-row');
@@ -9193,7 +9230,7 @@ async function publishConversation(){
     // replace the earlier version if this conversation was already published
     if(published) await ag.sb.from('conversations').delete().eq('id', published.id);
     const conv = await ag.sb.from('conversations')
-      .insert({ question: currentQuestion.slice(0, 500), seated, model: currentModel() })
+      .insert(Object.assign({ question: currentQuestion.slice(0, 500), seated, model: currentModel() }, continuedFrom ? { continued_from: continuedFrom } : {}))
       .select('id').single();
     if(conv.error) throw conv.error;
     const id = conv.data.id;
@@ -9239,7 +9276,8 @@ async function loadFromAgora(){
     q: c.data.question, s: c.data.seated || [],
     t: l.data.map(x => [x.speaker, x.to_speaker || '', x.body, x.re || '']),
     ds: (k.data || []).map(x => [x.after_position, { agreed: x.agreed, split: x.split, shifted: x.shifted, open: x.open_question }])
-  }, 'From the Agora. Ask your own below, or tap a face to hear them up close.');
+  }, 'From the Agora. Keep it going, add your own voice below, or tap a face to hear them up close.',
+     { agoraId: c.data.id, lineIds: l.data.map(x => x.id) });
 }
 
 // account button in the corner, plus a hello when arriving from the sign-in email
@@ -9675,7 +9713,7 @@ function startNewTranscript(question){
   lastVerdict = null; verdicts = []; takingUp = null;
   if(location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);  // leaving a shared view
   if(location.search.includes('agora=')) history.replaceState(null, '', location.pathname);                  // leaving a reopened Agora conversation
-  viewingShared = false; published = null;
+  viewingShared = false; published = null; continuedFrom = null;
   followTranscript = true; showJump(false);
   { const sh = document.getElementById('shareConvoLink'); if(sh) sh.style.display = 'none'; }
   { const pb = document.getElementById('publishLink'); if(pb) pb.style.display = 'none'; }
@@ -10318,6 +10356,8 @@ document.getElementById('shareConvoLink').addEventListener('click', (e) => { e.p
 document.getElementById('continueLink').addEventListener('click', async (e) => {
   e.preventDefault();
   if(!currentQuestion || !fullTranscript.length) return;
+  if(needAIKey()) return;
+  joinTable();
   track('keep-talking');
 
   const activeNames = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
@@ -10354,6 +10394,8 @@ async function handleChimeIn(){
   const input = document.getElementById('chimeInInput');
   const text = input.value.trim();
   if(!text || !currentQuestion || !fullTranscript.length) return;
+  if(needAIKey()) return;
+  joinTable();
   track('chime-in', { answeringOpenQuestion: !!takingUp });
 
   const myGen = renderGen;

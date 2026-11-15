@@ -245,6 +245,9 @@
         track('account-deleted');
         await sb.auth.signOut(); close(); refresh();
       };
+      const prof = el('a', 'ag-small-link', 'View my profile'); prof.href = 'agora.html?u=' + A.user.id;
+      prof.style.marginRight = '1.2rem';
+      box.appendChild(prof);
       const pp = el('a', 'ag-small-link', 'Privacy policy and community rules'); pp.href = 'privacy.html';
       box.appendChild(pp);
     });
