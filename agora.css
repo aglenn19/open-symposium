@@ -63,3 +63,9 @@ a.ag-pill, a.ag-pill:visited{
   transition: border-color .15s ease, background .15s ease;
 }
 @media (hover:hover) and (pointer:fine){ a.ag-pill:hover{ border-color: var(--thread-dim); background: rgba(227,178,60,0.1); } }
+
+/* correction form */
+.ag-form textarea{ width:100%; font-family:'Fraunces', serif; font-size:1rem; line-height:1.5; padding:0.65rem 0.8rem; border-radius:10px;
+  border:1px solid var(--panel-line); background: rgba(9,11,22,0.6); color: var(--text); resize:vertical; }
+.ag-form textarea:focus{ outline:none; border-color: var(--thread-dim); }
+.ag-quote{ margin:0 0 0.9rem; padding-left:0.8rem; border-left:2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); max-height:9rem; overflow:auto; }

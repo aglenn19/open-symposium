@@ -107,6 +107,14 @@
   .fp-row .ct{ font-size:0.78rem; color: var(--text-dim); width:5.5rem; text-align:right; flex-shrink:0; font-variant-numeric: tabular-nums; }
   @media (max-width: 760px){ .fp-row .nm{ width:6.5rem; font-size:0.9rem; } .fp-row .ct{ width:4.6rem; } }
 
+  /* sources, corrections */
+  .line .src{ font-size:0.8rem; color: var(--text-dim); margin:0.35rem 0 0; }
+  .line .src i{ color: var(--text); opacity:0.85; }
+  .line .src a, .recon a, .credit a{ color: var(--thread); text-decoration:none; }
+  .vote.fix{ margin-left:auto; font-size:0.74rem; opacity:0.75; }
+  .recon{ text-align:center; font-size:0.8rem; color: var(--text-dim); margin:0.6rem 0 1rem; }
+  .credit{ font-family:'Fraunces', serif; font-style:italic; color: var(--thread); margin:0.3rem 0 0; }
+  .review-note{ width:100%; margin:0.3rem 0 0.6rem; padding:0.5rem 0.7rem; border-radius:10px; border:1px solid var(--panel-line); background: rgba(9,11,22,0.6); color: var(--text); font-family:inherit; }
   /* comments */
   .cm-toggle{ margin-left:0.2rem; }
   .thread{ display:none; margin:0.8rem 0 0.2rem; padding:0.2rem 0 0.2rem 0.9rem; border-left:2px solid var(--panel-line); }
@@ -184,15 +192,16 @@
 
   <div id="adminView" style="display:none;">
     <p style="margin:0 0 1rem;"><a href="agora.html" class="ag-pill">&larr; All conversations</a></p>
-    <header><span class="eyebrow">ADMIN</span><h1>Reports</h1><p class="subhead">hide what breaks the rules; keep what doesn't</p></header>
+    <header><span class="eyebrow">ADMIN</span><h1>Review</h1><p class="subhead">corrections first, then reports</p></header>
     <div id="adminBody"></div>
   </div>
 
-  <footer><a href="privacy.html">Privacy policy and community rules</a></footer>
+  <footer><a href="about.html">How this works</a> · <a href="thinkers.html">The philosophers’ notes</a> · <a href="privacy.html">Privacy policy and community rules</a></footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <script src="agora-core.js"></script>
+<script src="thinkers-data.js"></script>
 <script>
 // =====================================================================
 //  The Agora page. Three views on one page:
@@ -208,6 +217,15 @@ const nickCache = {};                  // author id -> nickname
 A.mountAccount(document.getElementById('nav'));
 
 // ---------- small helpers ----------
+// "drawing on <Title> · SEP ↗" under a line, linking to a scholarly encyclopedia
+function sourceTag(name, title){
+  const T = window.THINKERS && window.THINKERS[name]; if(!T || !title) return null;
+  const p = A.el('p', 'src', 'drawing on ');
+  p.appendChild(A.el('i', null, title)); p.append(' \u00b7 ');
+  const a = A.el('a', null, /^Stanford/.test(T.label) ? 'SEP \u2197' : /^Internet/.test(T.label) ? 'IEP \u2197' : 'read more \u2197');
+  a.href = T.url; a.target = '_blank'; a.rel = 'noopener'; a.title = T.label; p.appendChild(a);
+  return p;
+}
 async function loadNicknames(ids){
   const need = [...new Set(ids.filter(id => id && !(id in nickCache)))];
   if(!need.length) return;
@@ -405,6 +423,11 @@ async function showConversation(id){
     head.appendChild(p);
   }
   head.appendChild(facesRow(conv.seated || [], 12));
+  const recon = A.el('p', 'recon', 'An AI reconstruction of how these thinkers might argue, not their own words. ');
+  const how = A.el('a', null, 'How this works'); how.href = 'about.html'; recon.appendChild(how);
+  recon.append(' \u00b7 ');
+  const notes = A.el('a', null, 'Check the notes the table uses'); notes.href = 'thinkers.html'; recon.appendChild(notes);
+  head.appendChild(recon);
 
   // actions: join it at the 3D table, copy the link, delete (author or admin)
   const actions = A.el('div', 'actions');
@@ -448,8 +471,15 @@ async function showConversation(id){
     col.appendChild(who);
     if(line.re) col.appendChild(A.el('p', 're', 'answering: ' + line.re));
     col.appendChild(A.el('p', 'body', line.body));
+    if(line.speaker !== 'You' && line.source){ const t = sourceTag(line.speaker, line.source); if(t) col.appendChild(t); }
     if(line.speaker !== 'You'){
       const vr = voteRow(line.id); col.appendChild(vr);
+      if(A.PHILOSOPHERS.includes(line.speaker)){
+        const fix = A.el('button', 'vote fix', 'Misrepresents them?'); fix.type = 'button';
+        fix.title = 'Tell us if this isn\u2019t something ' + line.speaker + ' would hold';
+        fix.onclick = () => A.openCorrection(line.speaker, { id: line.id, body: line.body });
+        vr.appendChild(fix);
+      }
       const thread = threadBox(line.id); col.appendChild(thread);
       vr.appendChild(threadToggle(line.id, thread));
     }
@@ -498,10 +528,11 @@ function checkpointCard(x, n){
 async function showProfile(uid){
   show('profileView');
   const box = document.getElementById('profileBody');
-  const [p, convs, fp] = await Promise.all([
+  const [p, convs, fp, cr] = await Promise.all([
     A.sb.from('profiles').select('id,nickname,created_at').eq('id', uid).maybeSingle(),
     A.sb.from('conversations').select('*').eq('author', uid).order('created_at', { ascending: false }).limit(50),
-    A.sb.from('fingerprints').select('*').eq('voter', uid)
+    A.sb.from('fingerprints').select('*').eq('voter', uid),
+    A.sb.from('correction_credits').select('accepted').eq('author', uid).maybeSingle()
   ]);
   if(!p.data){ box.appendChild(A.el('p', 'note', 'This member isn’t here anymore.')); return; }
   A.track('agora-profile-opened');
@@ -511,6 +542,8 @@ async function showProfile(uid){
   head.appendChild(A.el('span', 'eyebrow', 'MEMBER'));
   head.appendChild(A.el('h1', null, p.data.nickname));
   head.appendChild(A.el('p', 'subhead', 'joined ' + A.when(p.data.created_at)));
+  const credits = cr && cr.data && cr.data.accepted;
+  if(credits){ const c = A.el('p', 'credit', plural(credits, 'accepted correction') + ' \u00b7 '); const a = A.el('a', null, 'see the notes'); a.href = 'thinkers.html'; c.appendChild(a); head.appendChild(c); }
   box.appendChild(head);
 
   // the philosophical fingerprint: who they side with, who they push back on
@@ -751,13 +784,14 @@ async function showAdmin(){
   const box = document.getElementById('adminBody');
   await A.ready;
   if(!A.profile || !A.profile.is_admin){ box.appendChild(A.el('p', 'note', 'This page is for the site’s admin.')); return; }
+  await showCorrectionsQueue(box);
   const { data: reps, error } = await A.sb.from('reports').select('*').eq('resolved', false).order('created_at', { ascending: false });
   if(error){ box.appendChild(A.el('p', 'note', A.plainError(error))); return; }
   // group reports by the thing reported
   const groups = {};
   (reps || []).forEach(r => { const k = r.target_type + ':' + r.target_id; (groups[k] = groups[k] || { kind: r.target_type, id: r.target_id, reasons: [], at: r.created_at }).reasons.push(r.reason || 'no reason given'); });
   const list = Object.values(groups);
-  box.appendChild(A.el('p', 'section-t', list.length ? plural(list.length, 'item') + ' to review' : 'Nothing to review'));
+  box.appendChild(A.el('p', 'section-t', list.length ? plural(list.length, 'reported item') + ' to review' : 'No open reports'));
   if(!list.length){ box.appendChild(A.el('p', 'note', 'No open reports. Quiet in the Agora.')); return; }
   const cids = list.filter(g => g.kind === 'comment').map(g => Number(g.id));
   const vids = list.filter(g => g.kind === 'conversation').map(g => g.id);
@@ -803,6 +837,39 @@ async function showAdmin(){
       row.appendChild(ban);
     }
     row.appendChild(msg); card.appendChild(row);
+    box.appendChild(card);
+  });
+}
+
+// corrections waiting for a decision: accept (shown publicly with credit) or decline (stays private)
+async function showCorrectionsQueue(box){
+  const { data, error } = await A.sb.from('corrections').select('*').eq('status', 'open').order('created_at', { ascending: true });
+  if(error){ box.appendChild(A.el('p', 'note', A.plainError(error))); return; }
+  const list = data || [];
+  box.appendChild(A.el('p', 'section-t', list.length ? plural(list.length, 'correction') + ' to review' : 'No corrections waiting'));
+  await loadNicknames(list.map(x => x.author));
+  list.forEach(x => {
+    const card = A.el('div', 'admin-card');
+    card.appendChild(A.el('p', 'label', x.philosopher + (x.line_text ? ' \u00b7 about one line' : ' \u00b7 about the notes')));
+    if(x.line_text) card.appendChild(A.el('blockquote', 'ag-quote', x.line_text));
+    card.appendChild(A.el('p', 'q', x.body));
+    if(x.reference) card.appendChild(A.el('p', 'byline', 'source given: ' + x.reference));
+    const meta = A.el('p', 'byline'); meta.append('from ', nickCache[x.author] || 'a member', ' \u00b7 ' + A.when(x.created_at) + ' \u00b7 ');
+    const notes = A.el('a', 'who-link', 'their notes'); notes.href = 'thinkers.html#' + A.slug(x.philosopher); notes.target = '_blank'; meta.appendChild(notes);
+    card.appendChild(meta);
+    const note = A.el('input', 'review-note'); note.type = 'text'; note.maxLength = 1000; note.placeholder = 'Note back to them (optional, shown with the decision)';
+    card.appendChild(note);
+    const row = A.el('div', 'ag-row'); const msg = A.el('span', 'ag-msg');
+    const decide = async decision => {
+      const { error } = await A.sb.rpc('admin_review_correction', { cid: x.id, decision, note: note.value.trim() });
+      if(error){ msg.textContent = A.plainError(error); msg.className = 'ag-msg bad'; return; }
+      A.track('agora-admin', { action: 'correction-' + decision });
+      row.innerHTML = ''; note.remove(); msg.textContent = decision === 'accepted' ? 'Accepted: it\u2019s on their page with credit. Update thinkers.json if the notes need fixing.' : 'Declined. Only they can see it.';
+      msg.className = 'ag-msg good'; row.appendChild(msg);
+    };
+    const yes = A.el('button', 'ag-btn primary', 'Accept'); yes.type = 'button'; yes.onclick = () => decide('accepted');
+    const no = A.el('button', 'ag-btn', 'Decline'); no.type = 'button'; no.onclick = () => decide('declined');
+    row.append(yes, no, msg); card.appendChild(row);
     box.appendChild(card);
   });
 }

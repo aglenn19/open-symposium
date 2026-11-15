@@ -581,6 +581,12 @@
     transition: border-color 0.3s ease, background 0.3s ease;
   }
   .t-to{ color: var(--text-dim); font-style: italic; }
+  .t-src{ margin:0.3rem 0 0; font-size:0.78rem; color: var(--text-dim); }
+  .t-src i{ color: var(--text); opacity:0.85; }
+  .t-src a, .bio-more a, .t-recon a{ color: var(--thread); text-decoration:none; }
+  .t-src a:hover, .bio-more a:hover, .t-recon a:hover{ text-decoration:underline; }
+  .t-recon{ margin:-0.3rem 0 0.9rem; font-size:0.78rem; color: var(--text-dim); }
+  .bio-more{ margin:0.6rem 0 0; font-size:0.85rem; color: var(--text-dim); }
   /* ---------- connect your AI ---------- */
   .connect-nudge{
     width:100%; max-width:620px; margin-top:0.8rem; padding:0.75rem 0.9rem; border-radius:12px;
@@ -7390,6 +7396,39 @@ const DOSSIERS = {
   }
 };
 
+// ---------- sources: which real works a line may cite, and where to read more ----------
+// cite = the titles a line is allowed to name ("drawing on ..."); url = encyclopedia entry
+const SOURCES = {"Heraclitus": {"url": "https://plato.stanford.edu/entries/heraclitus/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["the surviving fragments"]}, "Nietzsche": {"url": "https://plato.stanford.edu/entries/nietzsche/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Birth of Tragedy", "The Gay Science", "Thus Spoke Zarathustra", "Beyond Good and Evil", "On the Genealogy of Morality", "Twilight of the Idols"]}, "Epictetus": {"url": "https://plato.stanford.edu/entries/epictetus/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Discourses", "Enchiridion"]}, "Marcus Aurelius": {"url": "https://plato.stanford.edu/entries/marcus-aurelius/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Meditations"]}, "Camus": {"url": "https://plato.stanford.edu/entries/camus/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Stranger", "The Myth of Sisyphus", "The Plague", "The Rebel", "The Fall"]}, "Spinoza": {"url": "https://plato.stanford.edu/entries/spinoza/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Ethics", "Theological-Political Treatise", "Treatise on the Emendation of the Intellect"]}, "Diogenes": {"url": "https://iep.utm.edu/diogenes-of-sinope/", "label": "Internet Encyclopedia of Philosophy", "cite": ["anecdotes in Diogenes Laertius, Lives, Book VI"]}, "Lao Tzu": {"url": "https://plato.stanford.edu/entries/laozi/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Tao Te Ching"]}, "de Beauvoir": {"url": "https://plato.stanford.edu/entries/beauvoir/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Second Sex", "The Ethics of Ambiguity", "The Mandarins", "The Coming of Age", "Memoirs of a Dutiful Daughter"]}, "Alan Watts": {"url": "https://en.wikipedia.org/wiki/Alan_Watts", "label": "Wikipedia (no SEP or IEP entry: a popular interpreter, not an academic philosopher)", "cite": ["The Wisdom of Insecurity", "The Way of Zen", "The Book: On the Taboo Against Knowing Who You Are", "Tao: The Watercourse Way"]}, "Socrates": {"url": "https://plato.stanford.edu/entries/socrates/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Plato's Apology", "Plato's Euthyphro", "Plato's Crito", "Plato's Meno", "Plato's Republic"]}, "Plato": {"url": "https://plato.stanford.edu/entries/plato/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Republic", "Symposium", "Phaedo", "Apology", "Phaedrus", "Meno", "Timaeus", "Laws"]}, "Aristotle": {"url": "https://plato.stanford.edu/entries/aristotle/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Nicomachean Ethics", "Politics", "Metaphysics", "Physics", "Poetics", "Rhetoric", "De Anima"]}, "Confucius": {"url": "https://plato.stanford.edu/entries/confucius/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Analects"]}, "Buddha": {"url": "https://plato.stanford.edu/entries/buddha/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["the Dhammapada", "the Discourse on Turning the Wheel", "the Pali Canon"]}, "Kant": {"url": "https://plato.stanford.edu/entries/kant/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Critique of Pure Reason", "Groundwork of the Metaphysics of Morals", "Critique of Practical Reason", "Critique of Judgment", "What is Enlightenment?", "Perpetual Peace"]}, "Rousseau": {"url": "https://plato.stanford.edu/entries/rousseau/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Discourse on the Arts and Sciences", "Discourse on Inequality", "The Social Contract", "Emile", "Confessions", "Reveries of the Solitary Walker"]}, "Hume": {"url": "https://plato.stanford.edu/entries/hume/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["A Treatise of Human Nature", "An Enquiry Concerning Human Understanding", "An Enquiry Concerning the Principles of Morals", "Dialogues Concerning Natural Religion"]}, "Sartre": {"url": "https://plato.stanford.edu/entries/sartre/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Being and Nothingness", "Nausea", "No Exit", "Existentialism Is a Humanism", "Critique of Dialectical Reason"]}, "Arendt": {"url": "https://plato.stanford.edu/entries/arendt/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Origins of Totalitarianism", "The Human Condition", "Eichmann in Jerusalem", "On Revolution", "On Violence", "The Life of the Mind"]}, "Wittgenstein": {"url": "https://plato.stanford.edu/entries/wittgenstein/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Tractatus Logico-Philosophicus", "Philosophical Investigations", "On Certainty", "Blue and Brown Books"]}, "Rumi": {"url": "https://plato.stanford.edu/entries/arabic-islamic-mysticism/", "label": "Stanford Encyclopedia of Philosophy: Mysticism in Arabic and Islamic Philosophy (section 5, Rumi)", "cite": ["Masnavi", "Divan-e Shams-e Tabrizi", "Fihi Ma Fihi"]}, "Kierkegaard": {"url": "https://plato.stanford.edu/entries/kierkegaard/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Either/Or", "Fear and Trembling", "The Concept of Anxiety", "The Sickness Unto Death", "Concluding Unscientific Postscript"]}, "Mill": {"url": "https://plato.stanford.edu/entries/mill/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Utilitarianism", "On Liberty", "The Subjection of Women", "A System of Logic", "Considerations on Representative Government"]}, "Hobbes": {"url": "https://plato.stanford.edu/entries/hobbes/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Leviathan", "De Cive", "The Elements of Law"]}, "Locke": {"url": "https://plato.stanford.edu/entries/locke/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["An Essay Concerning Human Understanding", "Two Treatises of Government", "A Letter Concerning Toleration", "Some Thoughts Concerning Education"]}, "Simone Weil": {"url": "https://plato.stanford.edu/entries/simone-weil/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Gravity and Grace", "The Need for Roots", "Waiting for God", "The Iliad, or the Poem of Force"]}, "Wollstonecraft": {"url": "https://plato.stanford.edu/entries/wollstonecraft/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["A Vindication of the Rights of Woman", "A Vindication of the Rights of Men", "Thoughts on the Education of Daughters", "Letters Written in Sweden, Norway, and Denmark"]}, "Zhuangzi": {"url": "https://plato.stanford.edu/entries/zhuangzi/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["the Zhuangzi (inner chapters)", "the Zhuangzi"]}, "Foucault": {"url": "https://plato.stanford.edu/entries/foucault/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["History of Madness", "The Order of Things", "Discipline and Punish", "The History of Sexuality", "The Birth of the Clinic"]}, "Al-Ghazali": {"url": "https://plato.stanford.edu/entries/al-ghazali/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Incoherence of the Philosophers", "Deliverance from Error", "The Revival of the Religious Sciences", "The Niche of Lights"]}, "Zeno of Citium": {"url": "https://plato.stanford.edu/entries/stoicism/", "label": "Stanford Encyclopedia of Philosophy: Stoicism (no separate Zeno entry)", "cite": ["fragments reported by Diogenes Laertius, Lives, Book VII"]}, "Emerson": {"url": "https://plato.stanford.edu/entries/emerson/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Nature", "Self-Reliance", "The American Scholar", "The Over-Soul", "Compensation", "Divinity School Address"]}, "Pythagoras": {"url": "https://plato.stanford.edu/entries/pythagoras/", "label": "Stanford Encyclopedia of Philosophy", "cite": []}, "Descartes": {"url": "https://plato.stanford.edu/entries/descartes/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Discourse on the Method", "Meditations on First Philosophy", "Principles of Philosophy", "The Passions of the Soul"]}, "Hegel": {"url": "https://plato.stanford.edu/entries/hegel/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Phenomenology of Spirit", "Science of Logic", "Elements of the Philosophy of Right", "Lectures on the Philosophy of History"]}, "Marx": {"url": "https://plato.stanford.edu/entries/marx/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Communist Manifesto", "Capital", "Economic and Philosophic Manuscripts of 1844", "The German Ideology", "Theses on Feuerbach"]}, "Heidegger": {"url": "https://plato.stanford.edu/entries/heidegger/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Being and Time", "The Question Concerning Technology", "Letter on Humanism", "The Origin of the Work of Art"]}, "Augustine": {"url": "https://plato.stanford.edu/entries/augustine/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Confessions", "The City of God", "On the Trinity", "On Free Choice of the Will"]}, "Epicurus": {"url": "https://plato.stanford.edu/entries/epicurus/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Letter to Menoeceus", "Letter to Herodotus", "Principal Doctrines", "Vatican Sayings"]}, "Rawls": {"url": "https://plato.stanford.edu/entries/rawls/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["A Theory of Justice", "Political Liberalism", "The Law of Peoples", "Justice as Fairness: A Restatement"]}, "Shankara": {"url": "https://plato.stanford.edu/entries/shankara/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Brahma Sutra Bhashya", "commentaries on the Upanishads", "commentary on the Bhagavad Gita", "Upadesasahasri"]}, "Fanon": {"url": "https://plato.stanford.edu/entries/frantz-fanon/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Black Skin, White Masks", "The Wretched of the Earth", "A Dying Colonialism", "Toward the African Revolution"]}, "Russell": {"url": "https://plato.stanford.edu/entries/russell/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["Principia Mathematica", "The Problems of Philosophy", "A History of Western Philosophy", "Why I Am Not a Christian", "In Praise of Idleness"]}, "Machiavelli": {"url": "https://plato.stanford.edu/entries/machiavelli/", "label": "Stanford Encyclopedia of Philosophy", "cite": ["The Prince", "Discourses on Livy", "The Art of War", "Florentine Histories", "Mandragola"]}};
+// The AI suggests a title; we only keep it if it matches one on that thinker's list.
+function normTitle(x){ return String(x || '').toLowerCase().replace(/[\u2018\u2019'"\u201c\u201d]/g, '').replace(/^(the|a|an)\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function matchWork(name, title){
+  const S = SOURCES[name]; if(!S || !title) return null;
+  const t = normTitle(title); if(t.length < 3) return null;
+  return S.cite.find(w => normTitle(w) === t) ||
+         S.cite.find(w => { const n = normTitle(w); return n.length >= 5 && (t.includes(n) || n.includes(t)) && Math.min(n.length, t.length) >= 5; }) || null;
+}
+function thinkerSlug(name){ return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+// small line under a philosopher's words: "drawing on <Title> · Stanford Encyclopedia ↗"
+function sourceTag(name, title){
+  const S = SOURCES[name]; if(!S || !title) return null;
+  const p = document.createElement('p'); p.className = 't-src';
+  p.appendChild(document.createTextNode('drawing on '));
+  const i = document.createElement('i'); i.textContent = title; p.appendChild(i);
+  p.appendChild(document.createTextNode(' \u00b7 '));
+  const a = document.createElement('a'); a.href = S.url; a.target = '_blank'; a.rel = 'noopener';
+  a.textContent = /^Stanford/.test(S.label) ? 'SEP \u2197' : /^Internet/.test(S.label) ? 'IEP \u2197' : 'read more \u2197';
+  a.title = S.label; a.addEventListener('click', ev => ev.stopPropagation());
+  p.appendChild(a);
+  return p;
+}
+// "AI reconstruction · how this works" under each conversation heading
+function reconstructionNote(){
+  const p = document.createElement('p'); p.className = 't-recon';
+  p.innerHTML = 'AI reconstruction, not the philosophers\u2019 own words. <a href="about.html" target="_blank" rel="noopener">How this works</a>';
+  return p;
+}
+
+
 // ---------- canvas icon/text rendering (same path data, drawn with Path2D) ----------
 function drawPart(ctx, tag, attrs, color){
   ctx.strokeStyle = color; ctx.fillStyle = color;
@@ -9111,7 +9150,7 @@ async function shareConversation(){
   track('share-clicked');
   const btn = document.getElementById('shareConvoLink');
   const data = { v: 1, q: currentQuestion, s: seats.filter(s => !s.open && !s.tribute).map(s => s.name),
-    t: fullTranscript.map(t => [t.name, t.to || '', t.line, t.re || '']), d: lastVerdict, ds: verdicts.map(x => [x.at, x.v]) };
+    t: fullTranscript.map(t => t.src ? [t.name, t.to || '', t.line, t.re || '', t.src] : [t.name, t.to || '', t.line, t.re || '']), d: lastVerdict, ds: verdicts.map(x => [x.at, x.v]) };
   const url = location.origin + location.pathname + '#c=' + await packConversation(data);
   const touch = window.matchMedia('(pointer: coarse)').matches;
   if(touch && navigator.share){
@@ -9135,7 +9174,7 @@ async function loadSharedFromHash(){
 function replayConversation(data, statusText, opts){
   const seated = (data.s || []).filter(n => ALL_SEATS.some(s => s.name === n));
   if(seated.length >= 2){ selectedNames = seated; rebuildSeats(); }
-  const turns = data.t.map(([name, to, line, re]) => re ? ({ name, to: to || null, line, re }) : ({ name, to: to || null, line }));
+  const turns = data.t.map(([name, to, line, re, src]) => Object.assign({ name, to: to || null, line }, re ? { re } : {}, matchWork(name, src) ? { src: matchWork(name, src) } : {}));
   showStoredConversation({ question: data.q, turns });
   inAnswerMode = true;
   document.getElementById('askStatus').textContent = statusText;
@@ -9250,7 +9289,7 @@ async function publishConversation(){
     if(conv.error) throw conv.error;
     const id = conv.data.id;
     const lines = snapshot.map((t, i) => ({ conversation_id: id, position: i + 1, speaker: t.name,
-      to_speaker: t.to || null, body: (t.guest ? t.guest + ' (from the Agora): ' : '') + String(t.line).slice(0, 1900), re: t.re ? String(t.re).slice(0, 500) : null }));
+      to_speaker: t.to || null, body: (t.guest ? t.guest + ' (from the Agora): ' : '') + String(t.line).slice(0, 1900), re: t.re ? String(t.re).slice(0, 500) : null, source: t.src || null }));
     const l = await ag.sb.from('lines').insert(lines);
     if(l.error){ await ag.sb.from('conversations').delete().eq('id', id); throw l.error; }
     if(checks.length){
@@ -9289,7 +9328,7 @@ async function loadFromAgora(){
   track('agora-seated');
   replayConversation({
     q: c.data.question, s: c.data.seated || [],
-    t: l.data.map(x => [x.speaker, x.to_speaker || '', x.body, x.re || '']),
+    t: l.data.map(x => [x.speaker, x.to_speaker || '', x.body, x.re || '', x.source || '']),
     ds: (k.data || []).map(x => [x.after_position, { agreed: x.agreed, split: x.split, shifted: x.shifted, open: x.open_question }])
   }, 'From the Agora. Keep it going, add your own voice below, or tap a face to hear them up close.',
      { agoraId: c.data.id, lineIds: l.data.map(x => x.id) });
@@ -9443,6 +9482,14 @@ function renderBios(openName){
       const t = document.createElement('span'); t.textContent = text; f.appendChild(l); f.appendChild(t); facts.appendChild(f);
     });
     body.appendChild(facts);
+    if(SOURCES[s.name]){
+      const more = document.createElement('p'); more.className = 'bio-more';
+      const a1 = document.createElement('a'); a1.href = SOURCES[s.name].url; a1.target = '_blank'; a1.rel = 'noopener';
+      a1.textContent = (/^Stanford/.test(SOURCES[s.name].label) ? 'Stanford Encyclopedia' : /^Internet/.test(SOURCES[s.name].label) ? 'Internet Encyclopedia' : 'Read more') + ' \u2197';
+      const a2 = document.createElement('a'); a2.href = 'thinkers.html#' + thinkerSlug(s.name); a2.target = '_blank'; a2.rel = 'noopener';
+      a2.textContent = 'How the table plays them \u2197';
+      more.append(a1, document.createTextNode(' \u00b7 '), a2); body.appendChild(more);
+    }
     card.appendChild(head); card.appendChild(body);
     if(document.querySelector('.t-entry[data-name="' + CSS.escape(s.name) + '"]')) addLinesButton(card);
     view.appendChild(card);
@@ -9841,7 +9888,7 @@ function startNewTranscript(question){
   const heading = document.createElement('p');
   heading.className = 'transcript-heading';
   heading.textContent = "The table on: \u201c" + question + "\u201d";
-  panel.appendChild(heading);
+  panel.appendChild(heading); panel.appendChild(reconstructionNote());
   document.getElementById('detail').classList.remove('show');
   return renderGen;
 }
@@ -9907,6 +9954,7 @@ async function appendTurnsTyped(turns, gen){
 
     entry.appendChild(nameEl);
     entry.appendChild(lineEl);
+    if(turn.src) entry.dataset.src = turn.src;
     entry.appendChild(shareBtn);
     decorateEntry(entry); panel.appendChild(entry);
     followScroll(false);
@@ -9915,6 +9963,7 @@ async function appendTurnsTyped(turns, gen){
     if(gen !== renderGen){ speakingBadge.style.display = 'none'; hideCutaway(); return; }
     await typeLine(lineEl, turn.line, gen, 24);
     lineEl.classList.remove('typing');
+    { const tag = sourceTag(turn.name, turn.src); if(tag) lineEl.after(tag); }
     fullTranscript.push(turn);
 
     if(speakerEntry && speakerEntry.index !== currentIndex){
@@ -9961,6 +10010,7 @@ function dossierText(n){
     `Voice: ${PERSONA[n] || ''}\n` +
     `Ideas to draw on (use the full range, not just the first or most famous): ${d.ideas.join('; ')}\n` +
     `Real works: ${d.works}\n` +
+    ((SOURCES[n] && SOURCES[n].cite.length) ? `Citable as "src": ${SOURCES[n].cite.join(' | ')}\n` : `Citable as "src": none (use null)\n`) +
     `How they argue: ${d.method}\n` +
     `Would never: ${d.never}`;
 }
@@ -10001,16 +10051,17 @@ RULES FOR AUTHENTICITY:
 3. No invented quotations. Speak in your own words. Only name works from the "Real works" list, and only put words in quotation marks if they are genuine, well-known wording from that thinker. When unsure, paraphrase without quotation marks.
 4. Reason from your own era. You know you are at this table and can react to anything said here, but don't speak as if you personally knew later history, science or thinkers you could not have known.
 5. Real disagreement: where worldviews are truly incompatible, let them clash. A thinker may concede a point that lands, or change their mind, but only for a reason.
-6. Natural rhythm: a thinker may speak more than once or not at all. Line length varies, from one sharp sentence to about four. Not every line needs an image; a concrete example or argument beats a slogan.${priorText}${memoryText}
+6. Natural rhythm: a thinker may speak more than once or not at all. Line length varies, from one sharp sentence to about four. Not every line needs an image; a concrete example or argument beats a slogan.
+7. Sources: when a line genuinely draws on one specific work, give that work in "src", copied exactly from the speaker's "Citable as" list. If no single work fits, or the list says none, use null. Never cite a work for an idea it does not contain.${priorText}${memoryText}
 
-Write ${opts.turns ? turnTarget + ' or fewer' : 'about ' + turnTarget}${priorTurns.length ? ' more' : ''} turns. Respond ONLY with valid JSON: an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}${priorTurns.some(t => t.guest) ? ', or the reader\'s name' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no text outside the JSON array.
+Write ${opts.turns ? turnTarget + ' or fewer' : 'about ' + turnTarget}${priorTurns.length ? ' more' : ''} turns. Respond ONLY with valid JSON: an array of objects with "name", "to", "line" and "src" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}${priorTurns.some(t => t.guest) ? ', or the reader\'s name' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no text outside the JSON array.
 
 The question: ${question}`;
 
   const valid = new Set(activeNames.concat(['You']));
   const guestNames = new Set(priorTurns.filter(t => t.guest).map(t => t.guest));   // "to: Sarah" means the reader
   const clean = t => (t && activeNames.includes(t.name) && typeof t.line === 'string')
-    ? { name: t.name, line: t.line, to: guestNames.has(t.to) ? 'You' : ((valid.has(t.to) && t.to !== t.name) ? t.to : null) } : null;
+    ? Object.assign({ name: t.name, line: t.line, to: guestNames.has(t.to) ? 'You' : ((valid.has(t.to) && t.to !== t.name) ? t.to : null) }, matchWork(t.name, t.src) ? { src: matchWork(t.name, t.src) } : {}) : null;
   const keep = t => { sessionLines.add(t.name + '|' + String(t.line).slice(0, 160)); rememberLine(t.name, t.line); };
   const out = [];
   const parse = makeTurnStreamParser(obj => { const t = clean(obj); if(t){ out.push(t); keep(t); if(onTurn) onTurn(t); } });
@@ -10450,7 +10501,7 @@ function stopConversation(){
     typingEl.textContent = typingEl.dataset.fullText || typingEl.textContent;
     typingEl.classList.remove('typing');
     if(!fullTranscript.some(t => t.name === typingEl.closest('.t-entry').dataset.name && t.line === typingEl.dataset.fullText)){
-      fullTranscript.push({ name: typingEl.closest('.t-entry').dataset.name, line: typingEl.dataset.fullText });
+      { const en = typingEl.closest('.t-entry'); fullTranscript.push(Object.assign({ name: en.dataset.name, line: typingEl.dataset.fullText }, en.dataset.src ? { src: en.dataset.src } : {})); }
     }
   }
 
@@ -10639,7 +10690,7 @@ function showStoredConversation(data){
   const heading = document.createElement('p');
   heading.className = 'transcript-heading';
   heading.textContent = "The table on: \u201c" + data.question + "\u201d";
-  panel.appendChild(heading);
+  panel.appendChild(heading); panel.appendChild(reconstructionNote());
 
   data.turns.forEach(turn => {
     const isUser = turn.name === 'You';
@@ -10661,6 +10712,7 @@ function showStoredConversation(data){
     lineEl.textContent = turn.line;
     entry.appendChild(nameEl);
     entry.appendChild(lineEl);
+    { const tag = !isUser && sourceTag(turn.name, turn.src); if(tag) entry.appendChild(tag); }
     if(!isUser){
       const shareBtn = document.createElement('button');
       shareBtn.type = 'button';

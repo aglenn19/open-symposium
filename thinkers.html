@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The philosophers’ notes · The Symposium</title>
+<meta name="description" content="The exact notes the Symposium gives its AI for each of 45 philosophers, with scholarly sources and reader corrections.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="agora.css">
+<style>
+  * { box-sizing:border-box; }
+  html{ background: var(--ink-deep); scroll-behavior:smooth; }
+  body{ margin:0; min-height:100vh; padding: 3.6rem 1.2rem 4rem; color: var(--text); font-family:'Space Grotesk', sans-serif; -webkit-font-smoothing:antialiased; line-height:1.55;
+    background: radial-gradient(ellipse 120% 60% at 50% 0%, #171b30 0%, var(--ink) 45%, var(--ink-deep) 100%); }
+  .wrap{ max-width: 760px; margin: 0 auto; }
+  .ag-nav{ position:fixed; }
+  .back{ position:fixed; top:0.9rem; left:1rem; z-index:20; }
+  header{ text-align:center; margin: 0.6rem 0 2rem; }
+  .eyebrow{ font-family:'Fraunces', serif; letter-spacing:0.4em; font-size:0.72rem; color: var(--thread); }
+  h1{ font-family:'Fraunces', serif; font-weight:400; font-size:2.4rem; margin:0.3rem 0 0.4rem; line-height:1.15; }
+  h2{ font-family:'Fraunces', serif; font-weight:400; font-size:1.5rem; margin:2.2rem 0 0.6rem; }
+  .subhead{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); margin:0; font-size:1.02rem; }
+  p, li{ font-size:1rem; }
+  a{ color: var(--thread); }
+  .lead{ font-family:'Fraunces', serif; font-size:1.12rem; line-height:1.6; }
+  .box{ padding:1rem 1.2rem; border-radius:14px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); margin:1rem 0; }
+  .section-t{ font-family:'Fraunces', serif; letter-spacing:0.14em; text-transform:uppercase; font-size:0.72rem; color: var(--thread); margin:0 0 0.5rem; }
+  footer{ text-align:center; margin-top:3rem; font-family:'Fraunces', serif; font-size:0.84rem; color: var(--text-dim); }
+  footer a{ color: var(--text-dim); }
+  .jump{ display:flex; flex-wrap:wrap; gap:0.35rem; justify-content:center; margin:0 0 1.6rem; }
+  .jump a{ font-size:0.8rem; padding:0.25rem 0.65rem; border-radius:999px; border:1px solid var(--panel-line); color: var(--text-dim); text-decoration:none; }
+  .jump a:hover{ border-color: var(--thread-dim); color: var(--text); }
+  .th{ padding:1.2rem 1.3rem; margin-bottom:1rem; border-radius:14px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); scroll-margin-top:4rem; }
+  .th.hit{ border-color: var(--thread); box-shadow: 0 0 0 1px rgba(227,178,60,0.25); }
+  .th-head{ display:flex; gap:0.8rem; align-items:center; }
+  .th-head .ag-face{ width:52px; height:52px; }
+  .th h2{ margin:0; font-size:1.45rem; }
+  .th .era{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.9rem; margin:0; }
+  .th dl{ margin:0.9rem 0 0; }
+  .th dt{ font-family:'Fraunces', serif; letter-spacing:0.12em; text-transform:uppercase; font-size:0.66rem; color: var(--thread); margin-top:0.75rem; }
+  .th dd{ margin:0.2rem 0 0; color: var(--text); }
+  .th ul{ margin:0.2rem 0 0; padding-left:1.1rem; }
+  .th li{ margin:0.15rem 0; }
+  .th .read{ margin:0.9rem 0 0; font-size:0.9rem; }
+  .th .acts{ display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; margin-top:1rem; }
+  .fixes{ margin-top:1rem; border-top:1px solid rgba(38,44,72,0.6); padding-top:0.8rem; }
+  .fix{ margin:0.6rem 0; padding-left:0.8rem; border-left:2px solid var(--good); }
+  .fix.mine{ border-left-color: var(--panel-line); }
+  .fix .q{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); margin:0 0 0.2rem; font-size:0.92rem; }
+  .fix .b{ margin:0; white-space:pre-wrap; }
+  .fix .m{ margin:0.2rem 0 0; font-size:0.82rem; color: var(--text-dim); }
+  .fix .rv{ margin:0.25rem 0 0; font-size:0.86rem; font-family:'Fraunces', serif; font-style:italic; }
+  .checked{ font-size:0.78rem; color: var(--text-dim); }
+</style>
+<!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
+</head>
+<body>
+<a class="ag-pill back" href="index.html">&larr; The table</a>
+<nav class="ag-nav" id="nav"></nav>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">THE NOTES</span>
+    <h1>How the table plays each philosopher</h1>
+    <p class="subhead">the exact notes the AI is given, out in the open so you can check them</p>
+  </header>
+  <p class="lead">Every conversation at the table is written by an AI, not by the philosophers. Before it writes a line, it reads the notes below for each person seated. If a note gets someone wrong, or a line in the Agora does, tell us: every correction is read by a person, and accepted ones are listed here with the name of whoever sent them.</p>
+  <p style="text-align:center; margin:0 0 1.4rem;"><a href="about.html">How the whole thing works, and its limits &rarr;</a></p>
+  <div class="jump" id="jump"></div>
+  <div id="list"></div>
+  <footer><a href="about.html">How this works</a> · <a href="thinkers.html">The philosophers’ notes</a> · <a href="agora.html">The Agora</a> · <a href="privacy.html">Privacy and community rules</a></footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+<script src="agora-core.js"></script>
+<script src="thinkers-data.js"></script>
+<script>
+// =====================================================================
+//  The philosophers' notes: one card per thinker, built from thinkers-data.js,
+//  plus the corrections readers have sent (accepted ones for everyone,
+//  your own pending/declined ones just for you).
+// =====================================================================
+const A = window.agora, T = window.THINKERS;
+A.mountAccount(document.getElementById('nav'));
+const names = Object.keys(T).sort((a, b) => a.localeCompare(b));
+const jump = document.getElementById('jump'), list = document.getElementById('list');
+
+names.forEach(n => {
+  const d = T[n], id = thinkerSlug(n);
+  const j = A.el('a', null, n); j.href = '#' + id; jump.appendChild(j);
+  const card = A.el('section', 'th'); card.id = id; card.dataset.name = n;
+  const head = A.el('div', 'th-head'); head.appendChild(A.face(n));
+  const who = A.el('div'); who.appendChild(A.el('h2', null, n)); who.appendChild(A.el('p', 'era', d.era)); head.appendChild(who);
+  card.appendChild(head);
+  const dl = A.el('dl');
+  const row = (label, val) => { dl.appendChild(A.el('dt', null, label)); const dd = A.el('dd'); if(Array.isArray(val)){ const ul = A.el('ul'); val.forEach(v => ul.appendChild(A.el('li', null, v))); dd.appendChild(ul); } else dd.textContent = val; dl.appendChild(dd); };
+  row('How they sound', d.voice);
+  row('Ideas the AI can draw on', d.ideas);
+  row('Real works', d.works);
+  row('How they argue', d.method);
+  row('What they would never say', d.never);
+  row('Titles a line may cite', d.cite.length ? d.cite.join(' · ') : 'None: no surviving writings to cite, so their lines carry no source tag');
+  card.appendChild(dl);
+  const read = A.el('p', 'read', 'For a scholar\u2019s account: ');
+  const a = A.el('a', null, d.label + ' \u2197'); a.href = d.url; a.target = '_blank'; a.rel = 'noopener'; read.appendChild(a);
+  card.appendChild(read);
+  const acts = A.el('div', 'acts');
+  const fix = A.el('button', 'ag-btn', 'Suggest a correction'); fix.type = 'button';
+  fix.onclick = () => A.openCorrection(n, null);
+  acts.appendChild(fix); card.appendChild(acts);
+  card.appendChild(A.el('div', 'fixes')); card.lastChild.style.display = 'none';
+  list.appendChild(card);
+});
+
+// highlight the one in the address (#kant), e.g. from a bio card at the table
+function markHash(){
+  document.querySelectorAll('.th.hit').forEach(x => x.classList.remove('hit'));
+  const el = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if(el && el.classList.contains('th')){ el.classList.add('hit'); setTimeout(() => el.scrollIntoView({ block: 'start' }), 50); }
+}
+window.addEventListener('hashchange', markHash); markHash();
+
+// corrections: accepted (public) + your own
+async function loadFixes(){
+  if(A.offline) return;
+  const { data, error } = await A.sb.from('corrections').select('*').order('reviewed_at', { ascending: false, nullsFirst: true }).limit(1000);
+  if(error){ console.error(error); return; }
+  const ids = [...new Set((data || []).map(x => x.author))];
+  const nick = {};
+  if(ids.length){ const r = await A.sb.from('profiles').select('id,nickname').in('id', ids); (r.data || []).forEach(p => nick[p.id] = p.nickname); }
+  document.querySelectorAll('.fixes').forEach(f => { f.innerHTML = ''; f.style.display = 'none'; });
+  const by = {};
+  (data || []).forEach(x => (by[x.philosopher] = by[x.philosopher] || []).push(x));
+  Object.entries(by).forEach(([n, xs]) => {
+    const box = document.querySelector('.th[data-name="' + CSS.escape(n) + '"] .fixes'); if(!box) return;
+    const acc = xs.filter(x => x.status === 'accepted'), mine = xs.filter(x => x.status !== 'accepted');
+    if(acc.length) box.appendChild(A.el('p', 'section-t', 'Corrections from readers'));
+    acc.forEach(x => box.appendChild(fixEl(x, nick)));
+    if(mine.length) box.appendChild(A.el('p', 'section-t', 'Your corrections'));
+    mine.forEach(x => box.appendChild(fixEl(x, nick)));
+    box.style.display = '';
+  });
+}
+function fixEl(x, nick){
+  const f = A.el('div', 'fix' + (x.status === 'accepted' ? '' : ' mine'));
+  if(x.line_text) f.appendChild(A.el('p', 'q', 'About the line: \u201c' + x.line_text.slice(0, 300) + (x.line_text.length > 300 ? '\u2026' : '') + '\u201d'));
+  f.appendChild(A.el('p', 'b', x.body));
+  const m = A.el('p', 'm');
+  if(x.status === 'accepted'){
+    m.append('Accepted ' + A.when(x.reviewed_at) + ' \u00b7 credit: ');
+    const who = A.el('a', null, nick[x.author] || 'a member'); who.href = 'agora.html?u=' + x.author; m.appendChild(who);
+  } else m.textContent = x.status === 'open' ? 'Sent ' + A.when(x.created_at) + ' \u00b7 waiting for review (only you can see this)' : 'Not accepted \u00b7 only you can see this';
+  if(x.reference) m.append(' \u00b7 source: ' + x.reference);
+  f.appendChild(m);
+  if(x.reviewer_note) f.appendChild(A.el('p', 'rv', 'Reviewer: ' + x.reviewer_note));
+  return f;
+}
+A.ready.then(loadFixes); A.onChange(loadFixes);
+A.track('thinkers-viewed');
+</script>
+</body>
+</html>

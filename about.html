@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How this works · The Symposium</title>
+<meta name="description" content="What the Symposium is, how its AI philosophers are made, where it can go wrong, and how to correct it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="agora.css">
+<style>
+  * { box-sizing:border-box; }
+  html{ background: var(--ink-deep); scroll-behavior:smooth; }
+  body{ margin:0; min-height:100vh; padding: 3.6rem 1.2rem 4rem; color: var(--text); font-family:'Space Grotesk', sans-serif; -webkit-font-smoothing:antialiased; line-height:1.55;
+    background: radial-gradient(ellipse 120% 60% at 50% 0%, #171b30 0%, var(--ink) 45%, var(--ink-deep) 100%); }
+  .wrap{ max-width: 760px; margin: 0 auto; }
+  .ag-nav{ position:fixed; }
+  .back{ position:fixed; top:0.9rem; left:1rem; z-index:20; }
+  header{ text-align:center; margin: 0.6rem 0 2rem; }
+  .eyebrow{ font-family:'Fraunces', serif; letter-spacing:0.4em; font-size:0.72rem; color: var(--thread); }
+  h1{ font-family:'Fraunces', serif; font-weight:400; font-size:2.4rem; margin:0.3rem 0 0.4rem; line-height:1.15; }
+  h2{ font-family:'Fraunces', serif; font-weight:400; font-size:1.5rem; margin:2.2rem 0 0.6rem; }
+  .subhead{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); margin:0; font-size:1.02rem; }
+  p, li{ font-size:1rem; }
+  a{ color: var(--thread); }
+  .lead{ font-family:'Fraunces', serif; font-size:1.12rem; line-height:1.6; }
+  .box{ padding:1rem 1.2rem; border-radius:14px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); margin:1rem 0; }
+  .section-t{ font-family:'Fraunces', serif; letter-spacing:0.14em; text-transform:uppercase; font-size:0.72rem; color: var(--thread); margin:0 0 0.5rem; }
+  footer{ text-align:center; margin-top:3rem; font-family:'Fraunces', serif; font-size:0.84rem; color: var(--text-dim); }
+  footer a{ color: var(--text-dim); }
+  .wrap p, .wrap li{ color: var(--text); }
+  .wrap ul, .wrap ol{ padding-left:1.2rem; }
+  .wrap li{ margin:0.35rem 0; }
+  .dim{ color: var(--text-dim) !important; }
+  .rules li{ font-family:'Fraunces', serif; }
+</style>
+<!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
+</head>
+<body>
+<a class="ag-pill back" href="index.html">&larr; The table</a>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">HOW THIS WORKS</span>
+    <h1>What you’re reading, and what you’re not</h1>
+    <p class="subhead">a plain account for curious readers and skeptical scholars alike</p>
+  </header>
+
+  <div class="box"><p class="lead" style="margin:0;">Every line at the table is written by an AI. It is a <b>reconstruction</b>: an attempt to show how these thinkers might argue about your question, based on what they actually held. It is not a quotation, not a translation, and not a substitute for reading them.</p></div>
+
+  <h2>How a line gets written</h2>
+  <ol>
+    <li><b>Notes on each thinker.</b> For everyone seated, the AI gets a short dossier: their era, how they sounded, the ideas in their range, their real works, how they argued, and what they would never say. <a href="thinkers.html">All 45 sets of notes are public</a>, word for word.</li>
+    <li><b>Rules.</b> The AI is told, among other things:
+      <ul class="rules">
+        <li>Pick the idea that fits this question, not just their most famous one.</li>
+        <li>No invented quotations. Only put words in quotation marks if they are genuine, well-known wording; otherwise paraphrase.</li>
+        <li>Only name works from the thinker’s list of real works.</li>
+        <li>Reason from their own era: no knowledge of later history, science or thinkers.</li>
+        <li>Real disagreement where views truly clash; concede only for a reason.</li>
+        <li>When a line draws on one specific work, say which, from an approved list.</li>
+      </ul></li>
+    <li><b>Memory of the conversation.</b> Each new round sees everything said so far and is told not to repeat it. When you speak at the table, they answer you.</li>
+    <li><b>Checkpoints.</b> “Where the table stood” summaries are also written by the AI, from the transcript above them.</li>
+  </ol>
+
+  <h2>Source tags</h2>
+  <p>Some lines carry a small tag: <i>drawing on</i> a title, with a link to the <a href="https://plato.stanford.edu/" target="_blank" rel="noopener">Stanford Encyclopedia of Philosophy</a> (or the <a href="https://iep.utm.edu/" target="_blank" rel="noopener">Internet Encyclopedia of Philosophy</a> where Stanford has no entry).</p>
+  <ul>
+    <li>The AI suggests the title. The site only keeps it if it matches a work on that thinker’s approved list, so a made-up book can’t appear.</li>
+    <li>A tag points to the work the idea comes from. It is <b>not</b> a citation of a passage, and the AI can still pick the wrong work. If it does, use “Misrepresents them?”.</li>
+    <li>Thinkers who left no writings (Pythagoras, for one) never get a tag. Socrates is tagged with Plato’s dialogues, Diogenes and Zeno with Diogenes Laertius, because that is where what we know of them comes from.</li>
+    <li>The encyclopedia link is for the thinker, not for the line: it’s where to go for a careful, scholarly account.</li>
+  </ul>
+
+  <h2>Where it can go wrong</h2>
+  <ul>
+    <li><b>Flattening.</b> A few lines can’t carry a lifetime of thought. Expect simplification, and treat a line as an invitation to read, not a summary.</li>
+    <li><b>Misattribution.</b> The AI can blend a thinker with their followers, critics or popular image (Machiavelli and “Machiavellian”, Nietzsche and his misreaders).</li>
+    <li><b>Contested readings.</b> Scholars disagree about what many of these people meant. The notes pick a mainstream reading; they don’t settle debates.</li>
+    <li><b>Thinner knowledge.</b> AI models know less, and less reliably, about some traditions (classical Indian, Chinese and Islamic philosophy among them) than about modern Europe.</li>
+    <li><b>Second-hand figures.</b> Socrates, Pythagoras, Diogenes, Zeno, the Buddha and Laozi are known through others’ accounts or later texts; anything said in their voice is a reconstruction of a reconstruction.</li>
+    <li><b>Not all are academic philosophers.</b> Alan Watts, for example, was a popular interpreter; there’s no scholarly encyclopedia entry for him, so his card links to Wikipedia.</li>
+  </ul>
+
+  <h2>Correcting it</h2>
+  <p>Signed-in readers can flag any line in the Agora with <b>Misrepresents them?</b>, or suggest a fix to a thinker’s notes on <a href="thinkers.html">their page</a>. A person reads every one. Accepted corrections are shown on that thinker’s page with the sender’s name, counted on their profile, and used to revise the notes the AI reads. Declined ones stay private to the sender.</p>
+
+  <h2>Which AI wrote it</h2>
+  <p>At the table, each visitor connects their own AI account, so a conversation may come from Claude, GPT, Gemini or another model; published conversations say which. The Question of the Day is written by Claude. Your AI key stays in your own browser and is never stored by this site (see the <a href="privacy.html">privacy policy</a>).</p>
+
+  <h2>Who made it</h2>
+  <p>The Symposium is an independent project, built for people who like arguing about ideas. It has no affiliation with any university or with the encyclopedias it links to. If you teach or research any of these thinkers and the notes for one of them make you wince, a correction from you is the most useful thing this site can get.</p>
+  <footer><a href="about.html">How this works</a> · <a href="thinkers.html">The philosophers’ notes</a> · <a href="agora.html">The Agora</a> · <a href="privacy.html">Privacy and community rules</a></footer>
+</div>
+</body>
+</html>
