@@ -140,6 +140,12 @@
   .admin-card .label{ font-family:'Fraunces', serif; letter-spacing:0.12em; text-transform:uppercase; font-size:0.68rem; color: var(--thread); margin:0; }
   .admin-reasons{ font-family:'Space Grotesk', sans-serif; font-size:0.84rem; color: var(--bad); margin:0.3rem 0 0; }
   @media (max-width: 760px){ .cm-composer textarea{ font-size:1rem; } .thread{ padding-left:0.6rem; } }
+
+  .cm-sage .cm-head{ display:flex; align-items:center; gap:0.15rem; flex-wrap:wrap; }
+  .cm-sage .cm-head .ag-face{ margin-right:0.35rem; }
+  .cm-sage-name{ color: var(--thread); }
+  .cm-sage .cm-body{ font-size:1.02rem; }
+  a.cm-ask{ color: var(--thread); text-decoration:none; }
 </style>
 <!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
 <script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
@@ -603,10 +609,15 @@ function renderThread(box){
 }
 
 function commentEl(c, box){
-  const el = A.el('div', 'cm'); el.dataset.id = c.id;
+  const el = A.el('div', 'cm' + (c.speaker ? ' cm-sage' : '')); el.dataset.id = c.id;
   const head = A.el('div', 'cm-head');
-  if(c.author){ const a = A.el('a', 'who-link', nickCache[c.author] || 'a member'); a.href = 'agora.html?u=' + c.author; head.appendChild(a); }
-  else head.appendChild(document.createTextNode('a former member'));
+  const askerLink = () => { if(!c.author) return document.createTextNode('a former member'); const a = A.el('a', 'who-link', nickCache[c.author] || 'a member'); a.href = 'agora.html?u=' + c.author; return a; };
+  if(c.speaker){
+    // a philosopher's answer, brought in with "Ask the table"
+    head.appendChild(A.face(c.speaker, 24));
+    head.appendChild(A.el('span', 'cm-sage-name', ' ' + c.speaker));
+    const by = A.el('span', 'cm-when'); by.append(' \u00b7 asked by ', askerLink()); head.appendChild(by);
+  } else head.appendChild(askerLink());
   head.appendChild(A.el('span', 'cm-when', ' · ' + A.when(c.created_at)));
   if(c.is_hidden) head.appendChild(A.el('span', 'cm-hidden', (A.profile && A.profile.is_admin) ? 'hidden' : 'hidden while it’s reviewed'));
   el.appendChild(head);
@@ -626,7 +637,7 @@ function commentEl(c, box){
   };
   acts.appendChild(up);
   // reply (top-level comments only: replies go one level deep)
-  if(!c.parent_id){
+  if(!c.parent_id && !c.speaker){
     const rb = A.el('button', 'cm-act', 'Reply'); rb.type = 'button';
     rb.onclick = () => {
       if(el.querySelector(':scope > .cm-composer')) return;
@@ -635,6 +646,13 @@ function commentEl(c, box){
       const ta = comp.querySelector('textarea'); if(ta) ta.focus();
     };
     acts.appendChild(rb);
+  }
+  // Ask the table: bring a reader's comment to the 3D table, where the philosophers answer it
+  if(!c.speaker && !c.is_hidden){
+    const at = A.el('a', 'cm-act cm-ask', 'Ask the table'); at.href = 'index.html?agora=' + c.conversation_id + '&ask=' + c.id;
+    at.title = 'The philosophers most provoked by this comment answer it, with your AI';
+    at.addEventListener('click', () => A.track('agora-ask-clicked'));
+    acts.appendChild(at);
   }
   // report (not your own)
   if(!A.user || A.user.id !== c.author){

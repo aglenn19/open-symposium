@@ -904,6 +904,13 @@
   .qotd-banner .qb-label{ color: var(--thread); font-style:italic; }
   .qotd-banner .qb-go{ color: var(--thread); white-space:nowrap; }
   @media (hover:hover) and (pointer:fine){ .qotd-banner:hover{ background: rgba(227,178,60,0.16); } }
+
+  .ask-card{ margin: 0.8rem 0 1rem; padding: 1rem 1.1rem; border-radius: 12px; border:1px solid var(--thread-dim);
+    background: linear-gradient(180deg, rgba(227,178,60,0.09), rgba(227,178,60,0.02)); }
+  .ask-card .ask-t{ font-family:'Fraunces', serif; letter-spacing:0.12em; text-transform:uppercase; font-size:0.7rem; color: var(--thread); margin:0 0 0.6rem; }
+  .ask-card blockquote{ margin:0; padding-left:0.8rem; border-left:2px solid var(--thread); font-family:'Fraunces', serif; font-style:italic; font-size:1.02rem; line-height:1.5; white-space:pre-wrap; }
+  .ask-card .ask-by{ font-family:'Fraunces', serif; font-size:0.84rem; color: var(--text-dim); margin:0.5rem 0 0.8rem; }
+  .ask-card .ask-row{ display:flex; gap:0.6rem; flex-wrap:wrap; }
 </style>
 <!-- Usage stats for the site owner (Umami). Cookie-free; nothing visible to visitors.
      data-exclude-hash: shared conversation links live after the #, so they are never sent. -->
@@ -8895,6 +8902,7 @@ async function askVerdict(question, turns, prev){
 }
 // how one line of the transcript is written into a prompt (a "You" line notes which open question it answers)
 function lineForPrompt(t){
+  if(t.guest) return `${t.guest} (a reader from the Agora, a living person, not a historical figure): ${t.line}`;
   return `${t.name}${t.to ? ' (to ' + t.to + ')' : ''}${t.re ? ' (answering the open question "' + t.re + '")' : ''}: ${t.line}`;
 }
 
@@ -9242,7 +9250,7 @@ async function publishConversation(){
     if(conv.error) throw conv.error;
     const id = conv.data.id;
     const lines = snapshot.map((t, i) => ({ conversation_id: id, position: i + 1, speaker: t.name,
-      to_speaker: t.to || null, body: String(t.line).slice(0, 2000), re: t.re ? String(t.re).slice(0, 500) : null }));
+      to_speaker: t.to || null, body: (t.guest ? t.guest + ' (from the Agora): ' : '') + String(t.line).slice(0, 1900), re: t.re ? String(t.re).slice(0, 500) : null }));
     const l = await ag.sb.from('lines').insert(lines);
     if(l.error){ await ag.sb.from('conversations').delete().eq('id', id); throw l.error; }
     if(checks.length){
@@ -9285,6 +9293,8 @@ async function loadFromAgora(){
     ds: (k.data || []).map(x => [x.after_position, { agreed: x.agreed, split: x.split, shifted: x.shifted, open: x.open_question }])
   }, 'From the Agora. Keep it going, add your own voice below, or tap a face to hear them up close.',
      { agoraId: c.data.id, lineIds: l.data.map(x => x.id) });
+  const askId = new URLSearchParams(location.search).get('ask');
+  if(askId) offerAskFromComment(ag, c.data, Number(askId)).catch(e => console.error(e));
 }
 
 // "Question of the Day" link under the title: today's staged conversation, readable without an AI key
@@ -9299,6 +9309,86 @@ async function showQotdBanner(ag){
   b.querySelector('.qb-q').textContent = '\u201c' + q.question + '\u201d';
   b.style.display = 'inline-block';
   b.addEventListener('click', () => track('qotd-banner-clicked'));
+}
+
+// who a "→ You" arrow points at: the reader from the Agora when one was brought in, otherwise "You"
+function toLabel(to){
+  if(to !== 'You') return to;
+  const g = fullTranscript.slice().reverse().find(t => t.name === 'You');
+  return (g && g.guest) || 'You';
+}
+// ---------- Ask the table: a comment from the Agora, answered at the 3D table ----------
+// index.html?agora=<conversation>&ask=<comment>. The philosophers most provoked by the comment
+// answer its author by name, live; their answers are then posted under that comment in the Agora.
+async function offerAskFromComment(ag, conv, commentId){
+  const { data: cm } = await ag.sb.from('comments').select('*').eq('id', commentId).maybeSingle();
+  if(!cm || cm.conversation_id !== conv.id || cm.speaker) return;
+  let nick = 'a reader';
+  if(cm.author){ const { data: p } = await ag.sb.from('profiles').select('nickname').eq('id', cm.author).maybeSingle(); if(p) nick = p.nickname; }
+  const box = document.createElement('div'); box.className = 'ask-card';
+  box.innerHTML = '<p class="ask-t">Bring this comment to the table?</p><blockquote></blockquote><p class="ask-by"></p>' +
+    '<div class="ask-row"><button type="button" class="convo-btn primary ask-go">Ask the table</button><button type="button" class="convo-btn ask-no">Not now</button></div>';
+  box.querySelector('blockquote').textContent = cm.body;
+  box.querySelector('.ask-by').textContent = '— ' + nick + ', in the Agora. The philosophers it provokes most will answer, and their replies get posted under the comment.';
+  const status = document.getElementById('askStatus');
+  status.after(box);
+  box.querySelector('.ask-no').onclick = () => box.remove();
+  box.querySelector('.ask-go').onclick = async () => {
+    await ag.ready;
+    if(!ag.requireSignIn('Sign in to ask the table. Their replies are posted under the comment, marked as asked by you.')) return;
+    if(needAIKey()) return;
+    box.remove();
+    askTableAboutComment(ag, conv, cm, nick);
+  };
+}
+async function askTableAboutComment(ag, conv, cm, nick){
+  track('ask-the-table');
+  joinTable();
+  const status = document.getElementById('askStatus');
+  const myGen = renderGen;
+  const turn = { name: 'You', guest: nick, line: cm.body };
+  fullTranscript.push(turn);
+  // show the reader's comment in the transcript right away
+  const panel = document.getElementById('transcript');
+  const entry = document.createElement('div'); entry.className = 't-entry t-entry-user'; entry.dataset.name = 'You';
+  const nameEl = document.createElement('p'); nameEl.className = 't-name'; nameEl.textContent = nick + ' (from the Agora)';
+  const lineEl = document.createElement('p'); lineEl.className = 't-line'; lineEl.textContent = cm.body;
+  entry.append(nameEl, lineEl); decorateEntry(entry); panel.appendChild(entry);
+  if(biosOpen) showTab('convo');
+  followScroll(true);
+  document.getElementById('continueLink').style.display = 'none';
+  document.getElementById('chimeInRow').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-block';
+  status.textContent = 'The table considers what ' + nick + ' said…';
+  const names = seats.filter(s => !s.open && !s.tribute).map(s => s.name);
+  let answers = [];
+  try{
+    startThinking();
+    let q2 = Promise.resolve();
+    answers = await askTableRound(currentQuestion, fullTranscript.slice(), names, t => { stopThinking(); q2 = q2.then(() => appendTurnsTyped([t], myGen)); }, { turns: 3 });
+    if(myGen !== renderGen) return;
+    await q2;
+  } catch(err){
+    if(myGen === renderGen) status.textContent = statusMessageFor(err);
+    console.error(err);
+    return;
+  } finally {
+    stopThinking();
+    document.getElementById('stopBtn').style.display = 'none';
+    if(myGen === renderGen) finishConversationUI();
+  }
+  // post the answers under the comment (replies go one level deep, so under its top-level comment)
+  answers = answers.slice(0, 3);
+  if(!answers.length){ status.textContent = 'Nobody at the table took that one up. Try seating different philosophers.'; return; }
+  const parent = cm.parent_id || cm.id;
+  const { error } = await ag.sb.from('comments').insert(answers.map(t => ({
+    conversation_id: conv.id, line_id: cm.line_id || null, parent_id: parent, speaker: t.name, body: String(t.line).slice(0, 1000) })));
+  if(error){ status.textContent = 'The table answered, but the replies couldn’t be posted: ' + ag.plainError(error); return; }
+  track('ask-the-table-posted', { replies: answers.length });
+  status.innerHTML = '';
+  status.append('The table answered ' + nick + '. ');
+  const a = document.createElement('a'); a.href = 'agora.html?c=' + conv.id; a.textContent = 'See the replies in the Agora →';
+  a.style.color = 'var(--thread)'; status.appendChild(a);
 }
 
 // account button in the corner, plus a hello when arriving from the sign-in email
@@ -9802,7 +9892,7 @@ async function appendTurnsTyped(turns, gen){
     const nameEl = document.createElement('p');
     nameEl.className = 't-name';
     nameEl.textContent = turn.name;
-    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + turn.to; nameEl.appendChild(toEl); }
+    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + toLabel(turn.to); nameEl.appendChild(toEl); }
     if(turn.to) drawThread(turn.name, turn.to);
 
     const lineEl = document.createElement('p');
@@ -9878,19 +9968,22 @@ function dossierText(n){
 // one call to the model per round.
 // when priorTurns is non-empty, the prior conversation is included as plain-text
 // context and the model is told to CONTINUE it — real replies to real lines.
-async function askTableRound(question, priorTurns, activeNames, onTurn){
+async function askTableRound(question, priorTurns, activeNames, onTurn, opts){
+  opts = opts || {};
   const dossiers = activeNames.map(dossierText).join('\n\n');
-  const turnTarget = Math.min(Math.max(activeNames.length, 4), 10);
+  const turnTarget = opts.turns || Math.min(Math.max(activeNames.length, 4), 10);
   if(!priorTurns.length) sessionLines = new Set();          // a fresh question starts a fresh conversation
   const pastLines = recentLinesText(activeNames, sessionLines);
 
   let priorText = '';
   if(priorTurns.length){
-    const hasUserTurn = priorTurns.some(t => t.name === 'You');
+    const hasUserTurn = priorTurns.some(t => t.name === 'You' && !t.guest);
+    const guests = [...new Set(priorTurns.filter(t => t.guest).map(t => t.guest))];
     priorText = `\n\nTHE CONVERSATION SO FAR:\n` +
       priorTurns.map(lineForPrompt).join('\n') +
       `\n\nContinue this SAME conversation. Never restate a point already made above, by anyone. Each new line must add something: a new argument, a counterexample, a pointed question, a concession, or a sharper version of a disagreement aimed at a specific line above.` +
-      (hasUserTurn ? ` Any line from "You" is the actual living person at the table, not a historical figure. When "You" speaks, the thinkers notice and answer them directly ("you"), engaging with exactly what they said.` : '');
+      (hasUserTurn ? ` Any line from "You" is the actual living person at the table, not a historical figure. When "You" speaks, the thinkers notice and answer them directly ("you"), engaging with exactly what they said.` : '') +
+      (guests.length ? ` Lines from ${guests.join(', ')} are comments from a living reader in the Agora, brought to the table. The thinkers most provoked by the latest one answer them directly and by name, engaging with exactly what they said; anyone untouched by it stays quiet.` : '');
   }
 
   const memoryText = pastLines
@@ -9910,13 +10003,14 @@ RULES FOR AUTHENTICITY:
 5. Real disagreement: where worldviews are truly incompatible, let them clash. A thinker may concede a point that lands, or change their mind, but only for a reason.
 6. Natural rhythm: a thinker may speak more than once or not at all. Line length varies, from one sharp sentence to about four. Not every line needs an image; a concrete example or argument beats a slogan.${priorText}${memoryText}
 
-Write about ${turnTarget}${priorTurns.length ? ' more' : ''} turns. Respond ONLY with valid JSON: an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no text outside the JSON array.
+Write ${opts.turns ? turnTarget + ' or fewer' : 'about ' + turnTarget}${priorTurns.length ? ' more' : ''} turns. Respond ONLY with valid JSON: an array of objects with "name", "to" and "line" keys, in speaking order. "name" is the speaker; "to" is the one person this line mainly answers or challenges (another seated thinker${priorTurns.some(t => t.name === 'You') ? ', or "You" for the living person' : ''}${priorTurns.some(t => t.guest) ? ', or the reader\'s name' : ''}), or null if it answers the question itself. Use only these exact names: ${JSON.stringify(activeNames)}. No markdown, no code fences, no text outside the JSON array.
 
 The question: ${question}`;
 
   const valid = new Set(activeNames.concat(['You']));
+  const guestNames = new Set(priorTurns.filter(t => t.guest).map(t => t.guest));   // "to: Sarah" means the reader
   const clean = t => (t && activeNames.includes(t.name) && typeof t.line === 'string')
-    ? { name: t.name, line: t.line, to: (valid.has(t.to) && t.to !== t.name) ? t.to : null } : null;
+    ? { name: t.name, line: t.line, to: guestNames.has(t.to) ? 'You' : ((valid.has(t.to) && t.to !== t.name) ? t.to : null) } : null;
   const keep = t => { sessionLines.add(t.name + '|' + String(t.line).slice(0, 160)); rememberLine(t.name, t.line); };
   const out = [];
   const parse = makeTurnStreamParser(obj => { const t = clean(obj); if(t){ out.push(t); keep(t); if(onTurn) onTurn(t); } });
@@ -10561,7 +10655,7 @@ function showStoredConversation(data){
     const nameEl = document.createElement('p');
     nameEl.className = 't-name';
     nameEl.textContent = turn.name;
-    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + turn.to; nameEl.appendChild(toEl); }
+    if(turn.to){ const toEl = document.createElement('span'); toEl.className = 't-to'; toEl.textContent = ' \u2192 ' + toLabel(turn.to); nameEl.appendChild(toEl); }
     const lineEl = document.createElement('p');
     lineEl.className = 't-line';
     lineEl.textContent = turn.line;
