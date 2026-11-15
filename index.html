@@ -898,6 +898,12 @@
       transform: scale(0.95); filter: brightness(1.15);
     }
   }
+
+  .qotd-banner{ margin-top:1rem; font-family:'Fraunces', serif; font-size:0.95rem; color: var(--text); text-decoration:none;
+    padding:0.5rem 1.1rem; border-radius:999px; border:1px solid var(--thread-dim); background: rgba(227,178,60,0.08); max-width:100%; }
+  .qotd-banner .qb-label{ color: var(--thread); font-style:italic; }
+  .qotd-banner .qb-go{ color: var(--thread); white-space:nowrap; }
+  @media (hover:hover) and (pointer:fine){ .qotd-banner:hover{ background: rgba(227,178,60,0.16); } }
 </style>
 <!-- Usage stats for the site owner (Umami). Cookie-free; nothing visible to visitors.
      data-exclude-hash: shared conversation links live after the #, so they are never sent. -->
@@ -916,6 +922,7 @@
   <span class="eyebrow">ΣΥΜΠΟΣΙΟΝ</span>
   <h1>The Symposium</h1>
   <p class="subhead">choose who's seated, then ask them anything — drag to look around, tap a seat to hear from them</p>
+  <a id="qotdBanner" class="qotd-banner" style="display:none;"></a>
 </header>
 
 <a href="#" id="editTableLink" class="edit-table-link"><span class="link-icon">+</span>Choose who's at the table</a>
@@ -9280,9 +9287,24 @@ async function loadFromAgora(){
      { agoraId: c.data.id, lineIds: l.data.map(x => x.id) });
 }
 
+// "Question of the Day" link under the title: today's staged conversation, readable without an AI key
+async function showQotdBanner(ag){
+  const { data } = await ag.sb.from('conversations').select('id,question,qotd_date').eq('is_qotd', true).order('qotd_date', { ascending: false }).limit(1);
+  const q = data && data[0]; if(!q) return;
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const b = document.getElementById('qotdBanner');
+  b.href = 'agora.html?c=' + q.id;
+  b.innerHTML = '<span class="qb-label"></span> <span class="qb-q"></span> <span class="qb-go">Read it &rarr;</span>';
+  b.querySelector('.qb-label').textContent = q.qotd_date === today ? 'Question of the Day:' : 'Latest question:';
+  b.querySelector('.qb-q').textContent = '\u201c' + q.question + '\u201d';
+  b.style.display = 'inline-block';
+  b.addEventListener('click', () => track('qotd-banner-clicked'));
+}
+
 // account button in the corner, plus a hello when arriving from the sign-in email
 window.agoraLoad.then(ag => {
   if(!ag || ag.offline) return;
+  showQotdBanner(ag).catch(() => {});
   ag.mountAccount(document.getElementById('agNav'));
   ag.onChange(() => updatePublishButton());
   if(cameFromSignIn) ag.ready.then(() => { if(ag.user && !fullTranscript.length){

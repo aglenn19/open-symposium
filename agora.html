@@ -256,11 +256,18 @@ function show(view){
 }
 
 // ---------- the feed ----------
+// the newest Question of the Day is pinned on top; older ones sit in the feed like everything else
+let pinnedId = null;
+const centralToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 async function loadQotd(){
-  const today = new Date().toISOString().slice(0, 10);
-  const { data } = await A.sb.from('conversations').select('*').eq('is_qotd', true).eq('qotd_date', today).limit(1);
+  const { data } = await A.sb.from('conversations').select('*').eq('is_qotd', true).order('qotd_date', { ascending: false }).limit(1);
   const slot = document.getElementById('qotd'); slot.innerHTML = '';
-  if(data && data[0]){ const v = await voteCounts([data[0].id]); slot.appendChild(card(data[0], 'Question of the Day', v[data[0].id])); }
+  pinnedId = null;
+  if(data && data[0]){
+    pinnedId = data[0].id;
+    const v = await voteCounts([data[0].id]);
+    slot.appendChild(card(data[0], data[0].qotd_date === centralToday() ? 'Question of the Day' : 'Latest Question of the Day', v[data[0].id]));
+  }
 }
 async function loadFeed(reset){
   const feed = document.getElementById('feed'), more = document.getElementById('moreBtn');
@@ -274,7 +281,7 @@ async function loadFeed(reset){
     }
     const slice = votedIds.slice(offset, offset + PAGE);
     if(slice.length){
-      let q = A.sb.from('conversations').select('*').in('id', slice.map(x => x[0])).eq('is_qotd', false);
+      let q = A.sb.from('conversations').select('*').in('id', slice.map(x => x[0]).filter(id => id !== pinnedId));
       if(filterName) q = q.contains('seated', [filterName]);
       const { data, error } = await q;
       if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
@@ -284,7 +291,8 @@ async function loadFeed(reset){
     hasMore = votedIds.length > offset + PAGE;
     offset += slice.length;
   } else {
-    let q = A.sb.from('conversations').select('*').eq('is_qotd', false).order('created_at', { ascending: false }).range(offset, offset + PAGE - 1);
+    let q = A.sb.from('conversations').select('*').order('created_at', { ascending: false }).range(offset, offset + PAGE - 1);
+    if(pinnedId) q = q.neq('id', pinnedId);
     if(filterName) q = q.contains('seated', [filterName]);
     const { data, error } = await q;
     if(error){ feed.appendChild(A.el('p', 'note', A.plainError(error))); return; }
@@ -795,7 +803,7 @@ if(A.offline){
   if(params.get('admin')) showAdmin();
   else if(params.get('c')) showConversation(params.get('c'));
   else if(params.get('u')) showProfile(params.get('u'));
-  else { A.track('agora-viewed'); loadQotd(); loadFeed(true); }
+  else { A.track('agora-viewed'); loadQotd().then(() => loadFeed(true)); }
 }
 </script>
 </body>
