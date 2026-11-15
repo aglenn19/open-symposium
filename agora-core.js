@@ -250,6 +250,10 @@
       box.appendChild(prof);
       const pp = el('a', 'ag-small-link', 'Privacy policy and community rules'); pp.href = 'privacy.html';
       box.appendChild(pp);
+      if(A.profile && A.profile.is_admin){
+        const adm = el('a', 'ag-small-link', 'Admin: review reports'); adm.href = 'agora.html?admin=1';
+        adm.style.display = 'block'; box.appendChild(adm);
+      }
     });
   }
   A.openAccount = openAccount;

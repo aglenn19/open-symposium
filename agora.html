@@ -106,6 +106,40 @@
   .fp-row .bar i{ display:block; height:100%; background: var(--good); }
   .fp-row .ct{ font-size:0.78rem; color: var(--text-dim); width:5.5rem; text-align:right; flex-shrink:0; font-variant-numeric: tabular-nums; }
   @media (max-width: 760px){ .fp-row .nm{ width:6.5rem; font-size:0.9rem; } .fp-row .ct{ width:4.6rem; } }
+
+  /* comments */
+  .cm-toggle{ margin-left:0.2rem; }
+  .thread{ display:none; margin:0.8rem 0 0.2rem; padding:0.2rem 0 0.2rem 0.9rem; border-left:2px solid var(--panel-line); }
+  .thread.open{ display:block; }
+  .discussion{ margin-top:2.2rem; }
+  .discussion .thread{ border-left:none; padding-left:0; }
+  .cm{ margin:0 0 0.9rem; }
+  .cm-head{ font-family:'Fraunces', serif; font-size:0.86rem; color: var(--text); }
+  .cm-when{ color: var(--text-dim); font-style:italic; }
+  .cm-hidden{ margin-left:0.5rem; font-size:0.72rem; padding:0.1rem 0.45rem; border-radius:999px; border:1px solid rgba(224,138,122,0.5); color: var(--bad); font-family:'Space Grotesk', sans-serif; }
+  .cm-body{ font-family:'Fraunces', serif; font-size:0.98rem; line-height:1.55; margin:0.2rem 0 0.3rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .cm-actions{ display:flex; gap:0.9rem; align-items:center; flex-wrap:wrap; }
+  .cm-act{ background:none; border:none; padding:0.15rem 0; cursor:pointer; font-family:'Space Grotesk', sans-serif; font-size:0.78rem; color: var(--text-dim); }
+  .cm-act.on{ color: var(--thread); }
+  .cm-del{ color: var(--bad); }
+  @media (hover:hover) and (pointer:fine){ .cm-act:hover{ color: var(--text); } }
+  .cm-replies{ margin:0.7rem 0 0 1.1rem; padding-left:0.9rem; border-left:1px solid var(--panel-line); }
+  .cm-empty{ font-family:'Fraunces', serif; font-style:italic; color: var(--text-dim); font-size:0.9rem; margin:0.2rem 0 0.7rem; }
+  .cm-composer{ margin:0.5rem 0 0.4rem; }
+  .cm-composer textarea{ width:100%; font-family:'Fraunces', serif; font-size:1rem; line-height:1.5; padding:0.65rem 0.8rem; border-radius:10px;
+    border:1px solid var(--panel-line); background: var(--ink); color: var(--text); resize:vertical; }
+  .cm-composer textarea:focus{ outline:none; border-color: var(--thread-dim); }
+  .cm-row{ display:flex; gap:0.6rem; align-items:center; margin-top:0.45rem; flex-wrap:wrap; }
+  .cm-row .ag-btn{ padding:0.45rem 1rem; font-size:0.85rem; }
+  .cm-count{ font-size:0.78rem; color: var(--text-dim); }
+  .rep-opts{ display:flex; flex-wrap:wrap; gap:0.45rem; }
+  .rep-opt{ font-size:0.84rem; padding:0.45rem 0.8rem; }
+  .rep-opt.on{ border-color: var(--thread); color: var(--thread); }
+  .admin-card{ padding:1rem 1.2rem; margin-bottom:0.8rem; border-radius:14px; border:1px solid var(--panel-line); background: rgba(22,26,46,0.75); }
+  .admin-card .q{ font-family:'Fraunces', serif; font-size:1.05rem; line-height:1.5; margin:0.2rem 0 0.4rem; white-space:pre-wrap; }
+  .admin-card .label{ font-family:'Fraunces', serif; letter-spacing:0.12em; text-transform:uppercase; font-size:0.68rem; color: var(--thread); margin:0; }
+  .admin-reasons{ font-family:'Space Grotesk', sans-serif; font-size:0.84rem; color: var(--bad); margin:0.3rem 0 0; }
+  @media (max-width: 760px){ .cm-composer textarea{ font-size:1rem; } .thread{ padding-left:0.6rem; } }
 </style>
 <!-- Usage stats (cookie-free; sign-in links live after the # and are never sent) -->
 <script defer src="https://cloud.umami.is/script.js" data-website-id="95dec4bd-08b5-49d9-9361-ee6466afef65" data-exclude-hash="true"></script>
@@ -142,6 +176,12 @@
     <div id="profileBody"></div>
   </div>
 
+  <div id="adminView" style="display:none;">
+    <p style="margin:0 0 1rem;"><a href="agora.html" class="ag-pill">&larr; All conversations</a></p>
+    <header><span class="eyebrow">ADMIN</span><h1>Reports</h1><p class="subhead">hide what breaks the rules; keep what doesn't</p></header>
+    <div id="adminBody"></div>
+  </div>
+
   <footer><a href="privacy.html">Privacy policy and community rules</a></footer>
 </div>
 
@@ -176,12 +216,19 @@ function authorEl(c){
   a.addEventListener('click', e => e.stopPropagation());
   return a;
 }
-// vote counts for a set of conversations: { id: votes }
+// votes and comments for a set of conversations: { id: { votes, comments } }
 async function voteCounts(ids){
   if(!ids.length) return {};
-  const { data } = await A.sb.from('conversation_activity').select('conversation_id,votes').in('conversation_id', ids);
-  const out = {}; (data || []).forEach(r => { out[r.conversation_id] = r.votes; }); return out;
+  const [v, c] = await Promise.all([
+    A.sb.from('conversation_activity').select('conversation_id,votes').in('conversation_id', ids),
+    A.sb.from('conversation_comment_counts').select('conversation_id,comments').in('conversation_id', ids)
+  ]);
+  const out = {};
+  (v.data || []).forEach(r => { (out[r.conversation_id] = out[r.conversation_id] || {}).votes = +r.votes; });
+  (c.data || []).forEach(r => { (out[r.conversation_id] = out[r.conversation_id] || {}).comments = +r.comments; });
+  return out;
 }
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
 function facesRow(names, max){
   const row = A.el('div', 'faces');
   names.slice(0, max).forEach(n => row.appendChild(A.face(n)));
@@ -195,14 +242,17 @@ function card(c, label, votes){
   if(c.continued_from) a.appendChild(A.el('p', 'from', 'a continued conversation'));
   const meta = A.el('div', 'meta');
   meta.appendChild(facesRow(c.seated || [], 8));
-  if(votes) meta.appendChild(A.el('span', 'stat', votes + ' vote' + (votes === 1 ? '' : 's')));
+  const st = votes || {}, bits = [];
+  if(st.votes) bits.push(plural(st.votes, 'vote'));
+  if(st.comments) bits.push(plural(st.comments, 'comment'));
+  if(bits.length) meta.appendChild(A.el('span', 'stat', bits.join(' \u00b7 ')));
   const by = A.el('span', 'byline'); by.append('by ', authorEl(c), ' · ' + A.when(c.created_at));
   meta.appendChild(by);
   a.appendChild(meta);
   return a;
 }
 function show(view){
-  ['feedView', 'convoView', 'profileView'].forEach(v => { document.getElementById(v).style.display = v === view ? 'block' : 'none'; });
+  ['feedView', 'convoView', 'profileView', 'adminView'].forEach(v => { document.getElementById(v).style.display = v === view ? 'block' : 'none'; });
 }
 
 // ---------- the feed ----------
@@ -349,6 +399,9 @@ async function showConversation(id){
   const copy = A.el('button', 'ag-btn', 'Copy link'); copy.type = 'button';
   copy.onclick = async () => { try { await navigator.clipboard.writeText(location.href); copy.textContent = 'Link copied'; } catch(e){ copy.textContent = 'Copy the address bar'; } setTimeout(() => copy.textContent = 'Copy link', 2000); A.track('agora-link-copied'); };
   actions.append(seat, copy);
+  const rep = A.el('button', 'ag-btn', 'Report'); rep.type = 'button';
+  rep.onclick = () => openReport('conversation', conv.id);
+  actions.appendChild(rep);
   const del = A.el('button', 'ag-btn danger', 'Delete'); del.type = 'button'; del.style.display = 'none';
   actions.appendChild(del);
   head.appendChild(actions);
@@ -370,6 +423,7 @@ async function showConversation(id){
   // the transcript, with each checkpoint placed after the line it followed
   const lines = l.data || [], checks = k.data || [];
   await loadVotes(lines.filter(x => x.speaker !== 'You').map(x => x.id));
+  await loadComments(conv);
   const human = authorName(conv);
   lines.forEach(line => {
     const row = A.el('div', 'line' + (line.speaker === 'You' ? ' human' : ''));
@@ -380,11 +434,22 @@ async function showConversation(id){
     col.appendChild(who);
     if(line.re) col.appendChild(A.el('p', 're', 'answering: ' + line.re));
     col.appendChild(A.el('p', 'body', line.body));
-    if(line.speaker !== 'You') col.appendChild(voteRow(line.id));
+    if(line.speaker !== 'You'){
+      const vr = voteRow(line.id); col.appendChild(vr);
+      const thread = threadBox(line.id); col.appendChild(thread);
+      vr.appendChild(threadToggle(line.id, thread));
+    }
     row.appendChild(col); body.appendChild(row);
     checks.filter(x => x.after_position === line.position).forEach(x => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
   });
   checks.filter(x => x.after_position > lines.length).forEach(x => body.appendChild(checkpointCard(x, checks.indexOf(x) + 1)));
+
+  // the discussion about the whole conversation
+  const disc = A.el('div', 'discussion');
+  disc.appendChild(A.el('p', 'section-t', 'Discussion'));
+  const dbox = threadBox(null); dbox.classList.add('open'); disc.appendChild(dbox);
+  body.appendChild(disc);
+  renderThread(dbox);
 
   // conversations that grew out of this one
   if((branches.data || []).length){
@@ -400,6 +465,8 @@ async function showConversation(id){
     del.style.display = (A.user && (A.user.id === conv.author || (A.profile && A.profile.is_admin))) ? '' : 'none';
     await loadMyVotes(Object.keys(lineVotes).map(Number));
     document.querySelectorAll('.votes').forEach(r => r.__paint && r.__paint());
+    await loadMyUpvotes();
+    document.querySelectorAll('.thread').forEach(t => { if(t.classList.contains('open')) renderThread(t); });
   };
   onAuth(); A.onChange(onAuth);
 }
@@ -470,6 +537,250 @@ async function showProfile(uid){
   list.forEach(c => box.appendChild(card(c, null, v[c.id])));
 }
 
+// ---------- comments ----------
+// All comments for the open conversation are loaded at once, then shown in
+// the thread under each line (line_id) or in the Discussion (line_id empty).
+const CM = { conv: null, all: [], ups: {}, mine: new Set() };
+async function loadComments(conv){
+  CM.conv = conv;
+  const { data } = await A.sb.from('comments').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
+  CM.all = data || [];
+  await loadNicknames(CM.all.map(c => c.author));
+  const ids = CM.all.map(c => c.id);
+  CM.ups = {};
+  if(ids.length){
+    const { data: t } = await A.sb.from('comment_totals').select('*').in('comment_id', ids);
+    (t || []).forEach(r => { CM.ups[r.comment_id] = +r.upvotes; });
+  }
+  await loadMyUpvotes();
+}
+async function loadMyUpvotes(){
+  CM.mine = new Set();
+  const ids = CM.all.map(c => c.id);
+  if(!A.user || !ids.length) return;
+  const { data } = await A.sb.from('comment_votes').select('comment_id').in('comment_id', ids).eq('voter', A.user.id);
+  (data || []).forEach(r => CM.mine.add(r.comment_id));
+}
+const commentsFor = lineId => CM.all.filter(c => (c.line_id || null) === (lineId || null));
+// the "3 comments" button that opens a line's thread
+function threadToggle(lineId, box){
+  const b = A.el('button', 'vote cm-toggle'); b.type = 'button';
+  const paint = () => { const n = commentsFor(lineId).filter(c => !c.is_hidden).length; b.textContent = n ? plural(n, 'comment') : 'Comment'; };
+  b.__paint = paint; paint(); box.__toggle = b;
+  b.onclick = () => { box.classList.toggle('open'); if(box.classList.contains('open')){ renderThread(box); A.track('agora-thread-opened'); } };
+  return b;
+}
+function threadBox(lineId){ const box = A.el('div', 'thread'); box.__line = lineId; return box; }
+
+function renderThread(box){
+  const lineId = box.__line;
+  box.innerHTML = '';
+  const list = commentsFor(lineId);
+  const top = list.filter(c => !c.parent_id)
+    .sort((a, b) => (CM.ups[b.id] || 0) - (CM.ups[a.id] || 0) || new Date(a.created_at) - new Date(b.created_at));
+  top.forEach(c => {
+    const el = commentEl(c, box);
+    const replies = list.filter(r => r.parent_id === c.id);
+    if(replies.length){
+      const wrap = A.el('div', 'cm-replies');
+      replies.forEach(r => wrap.appendChild(commentEl(r, box)));
+      el.appendChild(wrap);
+    }
+    box.appendChild(el);
+  });
+  if(!top.length && lineId) box.appendChild(A.el('p', 'cm-empty', 'No comments on this line yet.'));
+  if(!top.length && !lineId) box.appendChild(A.el('p', 'cm-empty', 'No discussion yet. What did the table get right, or miss?'));
+  box.appendChild(composer(lineId, null, box));
+  if(box.__toggle) box.__toggle.__paint();
+}
+
+function commentEl(c, box){
+  const el = A.el('div', 'cm'); el.dataset.id = c.id;
+  const head = A.el('div', 'cm-head');
+  if(c.author){ const a = A.el('a', 'who-link', nickCache[c.author] || 'a member'); a.href = 'agora.html?u=' + c.author; head.appendChild(a); }
+  else head.appendChild(document.createTextNode('a former member'));
+  head.appendChild(A.el('span', 'cm-when', ' · ' + A.when(c.created_at)));
+  if(c.is_hidden) head.appendChild(A.el('span', 'cm-hidden', (A.profile && A.profile.is_admin) ? 'hidden' : 'hidden while it’s reviewed'));
+  el.appendChild(head);
+  el.appendChild(A.el('p', 'cm-body', c.body));
+  const acts = A.el('div', 'cm-actions');
+  // upvote
+  const up = A.el('button', 'cm-act cm-up' + (CM.mine.has(c.id) ? ' on' : ''), '▲ ' + (CM.ups[c.id] || 0)); up.type = 'button';
+  up.title = 'Upvote';
+  up.onclick = async () => {
+    if(!A.requireSignIn('Sign in to upvote comments.')) return;
+    const had = CM.mine.has(c.id);
+    const r = had ? await A.sb.from('comment_votes').delete().eq('comment_id', c.id).eq('voter', A.user.id)
+                  : await A.sb.from('comment_votes').insert({ comment_id: c.id });
+    if(r.error){ flash(acts, A.plainError(r.error)); return; }
+    if(had){ CM.mine.delete(c.id); CM.ups[c.id] = (CM.ups[c.id] || 1) - 1; } else { CM.mine.add(c.id); CM.ups[c.id] = (CM.ups[c.id] || 0) + 1; }
+    A.track('agora-comment-upvote'); renderThread(box);
+  };
+  acts.appendChild(up);
+  // reply (top-level comments only: replies go one level deep)
+  if(!c.parent_id){
+    const rb = A.el('button', 'cm-act', 'Reply'); rb.type = 'button';
+    rb.onclick = () => {
+      if(el.querySelector(':scope > .cm-composer')) return;
+      const comp = composer(c.line_id || null, c.id, box);
+      el.insertBefore(comp, el.querySelector(':scope > .cm-replies'));
+      const ta = comp.querySelector('textarea'); if(ta) ta.focus();
+    };
+    acts.appendChild(rb);
+  }
+  // report (not your own)
+  if(!A.user || A.user.id !== c.author){
+    const rp = A.el('button', 'cm-act', 'Report'); rp.type = 'button';
+    rp.onclick = () => openReport('comment', String(c.id));
+    acts.appendChild(rp);
+  }
+  // delete (yours, or admin): click twice to confirm
+  if(A.user && (A.user.id === c.author || (A.profile && A.profile.is_admin))){
+    const d = A.el('button', 'cm-act cm-del', 'Delete'); d.type = 'button';
+    d.onclick = async () => {
+      if(!d.dataset.sure){ d.dataset.sure = '1'; d.textContent = 'Delete for good?'; setTimeout(() => { d.textContent = 'Delete'; delete d.dataset.sure; }, 4000); return; }
+      const { error } = await A.sb.from('comments').delete().eq('id', c.id);
+      if(error){ flash(acts, A.plainError(error)); return; }
+      CM.all = CM.all.filter(x => x.id !== c.id && x.parent_id !== c.id);
+      A.track('agora-comment-deleted'); renderThread(box);
+    };
+    acts.appendChild(d);
+  }
+  el.appendChild(acts);
+  return el;
+}
+
+// the box to write a comment (or a reply)
+function composer(lineId, parentId, box){
+  const wrap = A.el('div', 'cm-composer');
+  if(!A.user){
+    const b = A.el('button', 'ag-btn', parentId ? 'Sign in to reply' : 'Sign in to comment'); b.type = 'button';
+    b.onclick = () => A.openSignIn('Sign in to join the discussion. Argue with ideas, not people.');
+    wrap.appendChild(b); return wrap;
+  }
+  const ta = A.el('textarea'); ta.maxLength = 1000; ta.rows = parentId ? 2 : 3;
+  ta.placeholder = parentId ? 'Write a reply…' : (lineId ? 'What do you make of this line?' : 'Add to the discussion. Argue with ideas, not people.');
+  const row = A.el('div', 'cm-row');
+  const count = A.el('span', 'cm-count', '');
+  const post = A.el('button', 'ag-btn primary', parentId ? 'Reply' : 'Post'); post.type = 'button';
+  const msg = A.el('span', 'ag-msg');
+  ta.addEventListener('input', () => { count.textContent = ta.value.length > 800 ? (1000 - ta.value.length) + ' left' : ''; });
+  row.append(post, count, msg);
+  if(parentId){ const cancel = A.el('button', 'ag-btn', 'Cancel'); cancel.type = 'button'; cancel.onclick = () => wrap.remove(); row.insertBefore(cancel, count); }
+  post.onclick = async () => {
+    const text = ta.value.trim();
+    if(!text){ msg.textContent = 'Write something first.'; msg.className = 'ag-msg bad'; return; }
+    if(A.profile && A.profile.is_banned){ msg.textContent = 'This account can no longer post.'; msg.className = 'ag-msg bad'; return; }
+    post.disabled = true;
+    const { data, error } = await A.sb.from('comments')
+      .insert({ conversation_id: CM.conv.id, line_id: lineId, parent_id: parentId, body: text }).select().single();
+    post.disabled = false;
+    if(error){ msg.textContent = A.plainError(error); msg.className = 'ag-msg bad'; return; }
+    nickCache[A.user.id] = (A.profile && A.profile.nickname) || nickCache[A.user.id];
+    CM.all.push(data);
+    A.track('agora-comment', { reply: !!parentId, onLine: !!lineId });
+    renderThread(box);
+  };
+  wrap.append(ta, row);
+  return wrap;
+}
+function flash(where, text){ const m = A.el('span', 'ag-msg bad', text); where.appendChild(m); setTimeout(() => m.remove(), 4000); }
+
+// ---------- reporting ----------
+function openReport(kind, id){
+  if(!A.requireSignIn('Sign in to report something. Reports are private: only the site owner sees them.')) return;
+  A.modal((box, close) => {
+    box.appendChild(A.el('p', 'ag-modal-title', kind === 'comment' ? 'Report this comment' : 'Report this conversation'));
+    box.appendChild(A.el('p', 'ag-modal-lead', 'What’s wrong with it? Anything reported by three different people is hidden until it’s reviewed.'));
+    const form = A.el('div', 'ag-form');
+    let reason = '';
+    const opts = A.el('div', 'rep-opts');
+    ['Spam or advertising', 'Harassment or attacking someone', 'Hate or threats', 'Sexual content', 'Private information', 'Something else'].forEach(r => {
+      const b = A.el('button', 'ag-btn rep-opt', r); b.type = 'button';
+      b.onclick = () => { reason = r; opts.querySelectorAll('.rep-opt').forEach(x => x.classList.toggle('on', x === b)); };
+      opts.appendChild(b);
+    });
+    const note = A.el('input'); note.type = 'text'; note.maxLength = 200; note.placeholder = 'Anything to add? (optional)';
+    const send = A.el('button', 'ag-btn primary', 'Send report'); send.type = 'button';
+    const msg = A.el('p', 'ag-msg');
+    form.append(opts, note, send, msg); box.appendChild(form);
+    send.onclick = async () => {
+      if(!reason){ msg.textContent = 'Pick a reason.'; msg.className = 'ag-msg bad'; return; }
+      const full = (reason + (note.value.trim() ? ': ' + note.value.trim() : '')).slice(0, 300);
+      const { error } = await A.sb.from('reports').insert({ target_type: kind, target_id: id, reason: full });
+      if(error){
+        msg.textContent = /duplicate|23505|unique/i.test(error.message || '') ? 'You’ve already reported this. Thanks.' : A.plainError(error);
+        msg.className = 'ag-msg ' + (/duplicate|23505|unique/i.test(error.message || '') ? 'good' : 'bad'); return;
+      }
+      A.track('agora-report', { kind });
+      form.innerHTML = ''; box.appendChild(A.el('p', 'ag-modal-lead', 'Thanks. The site owner will take a look.'));
+      setTimeout(close, 1600);
+    };
+  });
+}
+
+// ---------- admin: reports to review (agora.html?admin=1) ----------
+async function showAdmin(){
+  show('adminView');
+  const box = document.getElementById('adminBody');
+  await A.ready;
+  if(!A.profile || !A.profile.is_admin){ box.appendChild(A.el('p', 'note', 'This page is for the site’s admin.')); return; }
+  const { data: reps, error } = await A.sb.from('reports').select('*').eq('resolved', false).order('created_at', { ascending: false });
+  if(error){ box.appendChild(A.el('p', 'note', A.plainError(error))); return; }
+  // group reports by the thing reported
+  const groups = {};
+  (reps || []).forEach(r => { const k = r.target_type + ':' + r.target_id; (groups[k] = groups[k] || { kind: r.target_type, id: r.target_id, reasons: [], at: r.created_at }).reasons.push(r.reason || 'no reason given'); });
+  const list = Object.values(groups);
+  box.appendChild(A.el('p', 'section-t', list.length ? plural(list.length, 'item') + ' to review' : 'Nothing to review'));
+  if(!list.length){ box.appendChild(A.el('p', 'note', 'No open reports. Quiet in the Agora.')); return; }
+  const cids = list.filter(g => g.kind === 'comment').map(g => Number(g.id));
+  const vids = list.filter(g => g.kind === 'conversation').map(g => g.id);
+  const [cm, cv] = await Promise.all([
+    cids.length ? A.sb.from('comments').select('*').in('id', cids) : Promise.resolve({ data: [] }),
+    vids.length ? A.sb.from('conversations').select('*').in('id', vids) : Promise.resolve({ data: [] })
+  ]);
+  const byId = {}; (cm.data || []).forEach(x => byId['comment:' + x.id] = x); (cv.data || []).forEach(x => byId['conversation:' + x.id] = x);
+  const authorIds = Object.values(byId).map(x => x.author).filter(Boolean);
+  await loadNicknames(authorIds);
+  const { data: authors } = authorIds.length ? await A.sb.from('profiles').select('id,is_banned').in('id', authorIds) : { data: [] };
+  const banned = {}; (authors || []).forEach(a => banned[a.id] = a.is_banned);
+
+  list.forEach(g => {
+    const item = byId[g.kind + ':' + g.id];
+    const card = A.el('div', 'admin-card');
+    card.appendChild(A.el('p', 'label', (g.kind === 'comment' ? 'Comment' : 'Conversation') + ' · ' + plural(g.reasons.length, 'report') + (item && item.is_hidden ? ' · hidden' : ' · visible')));
+    if(!item){ card.appendChild(A.el('p', 'note', 'Already deleted.')); }
+    else {
+      card.appendChild(A.el('p', 'q', g.kind === 'comment' ? item.body : item.question));
+      const meta = A.el('p', 'byline');
+      meta.append('by ', item.author ? (nickCache[item.author] || 'a member') : 'a former member', ' · ');
+      const open = A.el('a', 'who-link', 'open'); open.href = 'agora.html?c=' + (g.kind === 'comment' ? item.conversation_id : item.id); open.target = '_blank';
+      meta.appendChild(open); card.appendChild(meta);
+    }
+    card.appendChild(A.el('p', 'admin-reasons', g.reasons.join(' • ')));
+    const row = A.el('div', 'ag-row'); const msg = A.el('span', 'ag-msg');
+    const done = text => { row.innerHTML = ''; msg.textContent = text; msg.className = 'ag-msg good'; row.appendChild(msg); };
+    const hide = A.el('button', 'ag-btn danger', 'Hide it'); hide.type = 'button';
+    hide.onclick = async () => { const { error } = await A.sb.rpc('admin_set_hidden', { kind: g.kind, target: g.id, hide: true }); if(error){ msg.textContent = A.plainError(error); return; } A.track('agora-admin', { action: 'hide' }); done('Hidden.'); };
+    const keep = A.el('button', 'ag-btn', 'Keep it up'); keep.type = 'button';
+    keep.onclick = async () => { const { error } = await A.sb.rpc('admin_set_hidden', { kind: g.kind, target: g.id, hide: false }); if(error){ msg.textContent = A.plainError(error); return; } A.track('agora-admin', { action: 'keep' }); done('Kept, and the reports are closed.'); };
+    row.append(hide, keep);
+    if(item && item.author && item.author !== A.user.id){
+      const isB = !!banned[item.author];
+      const ban = A.el('button', 'ag-btn', isB ? 'Unban author' : 'Ban author'); ban.type = 'button';
+      ban.onclick = async () => {
+        const now = ban.textContent === 'Ban author';
+        const { error } = await A.sb.rpc('admin_set_banned', { person: item.author, banned: now });
+        if(error){ msg.textContent = A.plainError(error); return; }
+        ban.textContent = now ? 'Unban author' : 'Ban author'; A.track('agora-admin', { action: now ? 'ban' : 'unban' });
+      };
+      row.appendChild(ban);
+    }
+    row.appendChild(msg); card.appendChild(row);
+    box.appendChild(card);
+  });
+}
+
 // ---------- start ----------
 const sel = document.getElementById('filterSel'), sortSel = document.getElementById('sortSel');
 A.PHILOSOPHERS.slice().sort().forEach(n => { const o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o); });
@@ -481,7 +792,8 @@ if(A.offline){
   document.getElementById('feed').appendChild(A.el('p', 'note', 'The Agora couldn’t load. Check your connection and refresh.'));
 } else {
   const params = new URLSearchParams(location.search);
-  if(params.get('c')) showConversation(params.get('c'));
+  if(params.get('admin')) showAdmin();
+  else if(params.get('c')) showConversation(params.get('c'));
   else if(params.get('u')) showProfile(params.get('u'));
   else { A.track('agora-viewed'); loadQotd(); loadFeed(true); }
 }
